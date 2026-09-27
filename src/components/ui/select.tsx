@@ -118,7 +118,6 @@ export function Select<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
-        aria-activedescendant={open ? `${listboxId}-option-${highlightedValue}` : undefined}
         disabled={disabled}
         onClick={() => {
           if (!disabled) {
