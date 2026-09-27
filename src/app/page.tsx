@@ -565,7 +565,7 @@ export default function HomePage() {
   }
 
   function resetAudioSessionPosition() {
-    const songId = audioRef.current?.dataset.songId;
+    const songId = audioRef.current?.getAttribute("data-song-id");
     if (songId) window.sessionStorage.removeItem(`cifrases:audio-position:${songId}`);
     seekAudio(0);
   }
