@@ -52,7 +52,7 @@ const sectionTypes: Array<{ value: SongSectionType; label: string }> = [
 ];
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm outline-none focus:border-brand/50";
+  "h-10 w-full rounded-xl border border-control-border bg-control-background px-3 text-sm text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50 focus:bg-control-background-hover";
 
 function line(id: string): SongLine {
   return { id, text: "", chords: [] };
@@ -509,9 +509,9 @@ export default function HomePage() {
               </button>
               <div className="flex-1">
                 {view === "library" ? (
-                  <div className="flex max-w-xl items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3">
+                  <div className="flex max-w-xl items-center gap-2 rounded-xl border border-control-border bg-control-background px-3">
                     <Search size={16} className="text-muted" />
-                    <input className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar música..." value={query} onChange={(event) => setQuery(event.target.value)} />
+                    <input className="h-10 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-control-placeholder" placeholder="Buscar música..." aria-label="Buscar música" value={query} onChange={(event) => setQuery(event.target.value)} />
                   </div>
                 ) : (
                   <span className="text-sm font-semibold">{view === "editor" ? draft?.title || "Nova música" : song?.title || "Cifrases"}</span>
@@ -606,7 +606,7 @@ function LibraryView({
           <p className="mt-2 text-sm text-muted">Cadastre, encontre e toque suas músicas.</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onNew}>Nova</button>
+          <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onNew}>Nova</button>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
             <Upload size={15} /> Importar
             <input className="hidden" type="file" accept=".json,application/json" onChange={(event) => {
@@ -619,11 +619,11 @@ function LibraryView({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <select className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" value={category} onChange={(event) => onCategory(event.target.value)}>
+        <select className="ui-select" aria-label="Filtrar por categoria" value={category} onChange={(event) => onCategory(event.target.value)}>
           <option value="all">Todas</option>
           {categories.map((item) => <option key={item}>{item}</option>)}
         </select>
-        <select className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" value={sort} onChange={(event) => onSort(event.target.value as SortMode)}>
+        <select className="ui-select" aria-label="Ordenar músicas" value={sort} onChange={(event) => onSort(event.target.value as SortMode)}>
           <option value="title">Título</option>
           <option value="artist">Artista</option>
           <option value="recent">Recentes</option>
@@ -752,21 +752,21 @@ function EditorView({
         {song.sections.map((section, sectionIndex) => (
           <div key={section.id} className="rounded-3xl border border-white/10 bg-surface p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <select className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" value={section.type} onChange={(event) => changeSection(section.id, (current) => ({ ...current, type: event.target.value as SongSectionType }))}>
+              <select className="ui-select" aria-label={`Tipo da seção ${sectionIndex + 1}`} value={section.type} onChange={(event) => changeSection(section.id, (current) => ({ ...current, type: event.target.value as SongSectionType }))}>
                 {sectionTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <input className={inputClass} value={section.label ?? ""} onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))} />
+              <input className={inputClass} aria-label={`Nome da seção ${sectionIndex + 1}`} value={section.label ?? ""} onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))} />
               <span className="text-xs text-muted">#{sectionIndex + 1}</span>
             </div>
 
             <div className="mt-4 space-y-2">
-              {section.lines.map((item) => (
+              {section.lines.map((item, lineIndex) => (
                 <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_260px]">
-                  <input className={inputClass} placeholder="Letra" value={item.text} onChange={(event) => changeSection(section.id, (current) => ({
+                  <input className={inputClass} aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`} placeholder="Letra" value={item.text} onChange={(event) => changeSection(section.id, (current) => ({
                     ...current,
                     lines: current.lines.map((currentLine) => currentLine.id === item.id ? { ...currentLine, text: event.target.value } : currentLine),
                   }))} />
-                  <input className={`${inputClass} font-mono text-chord`} placeholder="G@0 C@20 D@35" value={chordText(item.chords)} onChange={(event) => changeSection(section.id, (current) => ({
+                  <input className={`${inputClass} font-mono text-chord`} aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`} placeholder="G@0 C@20 D@35" value={chordText(item.chords)} onChange={(event) => changeSection(section.id, (current) => ({
                     ...current,
                     lines: current.lines.map((currentLine) => currentLine.id === item.id ? { ...currentLine, chords: parseChords(event.target.value) } : currentLine),
                   }))} />

@@ -6,9 +6,16 @@
   --muted: #98a2b3;
   --surface: #11151a;
   --panel: #181d24;
+  --control-background: #151a21;
+  --control-background-hover: #1c232c;
+  --control-border: #2a323d;
+  --control-border-focus: #8b6b25;
+  --control-foreground: #f7f8fa;
+  --control-placeholder: #798395;
   --brand: #d6a72e;
   --brand-soft: #f0c84b;
   --chord: #ff8a00;
+  color-scheme: dark;
 }
 
 :root[data-theme="purple"] {
@@ -35,6 +42,12 @@
   --color-muted: var(--muted);
   --color-surface: var(--surface);
   --color-panel: var(--panel);
+  --color-control-background: var(--control-background);
+  --color-control-background-hover: var(--control-background-hover);
+  --color-control-border: var(--control-border);
+  --color-control-border-focus: var(--control-border-focus);
+  --color-control-foreground: var(--control-foreground);
+  --color-control-placeholder: var(--control-placeholder);
   --color-brand: var(--brand);
   --color-brand-soft: var(--brand-soft);
   --color-chord: var(--chord);
@@ -47,6 +60,7 @@
 
 html {
   background: var(--background);
+  color-scheme: dark;
 }
 
 body {
@@ -56,6 +70,13 @@ body {
   color: var(--foreground);
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 button {
   cursor: pointer;
 }
@@ -63,4 +84,81 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand-soft);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  color: var(--control-foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--control-placeholder);
+  opacity: 1;
+}
+
+select,
+option {
+  color: var(--control-foreground);
+  background-color: var(--control-background);
+}
+
+select {
+  color-scheme: dark;
+  border-color: var(--control-border);
+  background-color: var(--control-background);
+}
+
+select:hover {
+  background-color: var(--control-background-hover);
+}
+
+select:disabled {
+  color: var(--control-placeholder);
+  background-color: var(--surface);
+}
+
+option:checked,
+option:hover {
+  color: #ffffff;
+  background-color: var(--brand);
+}
+
+::selection {
+  color: #ffffff;
+  background-color: var(--brand);
+}
+
+.ui-select {
+  min-height: 2.5rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.75rem;
+  background-color: var(--control-background);
+  color: var(--control-foreground);
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  color-scheme: dark;
+}
+
+.ui-select:hover {
+  border-color: color-mix(in srgb, var(--control-border) 75%, var(--brand) 25%);
+  background-color: var(--control-background-hover);
+}
+
+.ui-select:focus-visible {
+  border-color: var(--brand);
+}
+
+.ui-select option {
+  color: var(--control-foreground);
+  background-color: var(--control-background);
 }

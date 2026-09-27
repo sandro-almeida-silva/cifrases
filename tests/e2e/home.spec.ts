@@ -55,4 +55,61 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     await expect(page.getByText("Primeira Canção")).toBeVisible();
   });
+
+
+  test("keeps native selects readable and keyboard accessible", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("combobox", { name: "Filtrar por categoria" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Ordenar músicas" })).toBeVisible();
+
+    const selectStyle = await page.getByRole("combobox", { name: "Filtrar por categoria" }).evaluate((element) => {
+      const select = element as HTMLSelectElement;
+      const option = select.options[0];
+      const selectComputed = window.getComputedStyle(select);
+      const optionComputed = window.getComputedStyle(option);
+
+      return {
+        selectColorScheme: selectComputed.colorScheme,
+        selectBackground: selectComputed.backgroundColor,
+        selectColor: selectComputed.color,
+        optionBackground: optionComputed.backgroundColor,
+        optionColor: optionComputed.color,
+      };
+    });
+
+    expect(selectStyle.selectColorScheme).toContain("dark");
+    expect(selectStyle.selectBackground).not.toBe("rgb(255, 255, 255)");
+    expect(selectStyle.selectColor).not.toBe("rgb(255, 255, 255)");
+    expect(selectStyle.optionBackground).not.toBe("rgb(255, 255, 255)");
+
+    await page.getByRole("combobox", { name: "Filtrar por categoria" }).focus();
+    await expect(page.getByRole("combobox", { name: "Filtrar por categoria" })).toBeFocused();
+  });
+
+  test("editor select has an accessible name and readable styles", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    await page.getByRole("button", { name: "Nova música" }).click();
+    const sectionSelect = page.getByRole("combobox", { name: "Tipo da seção 1" });
+
+    await expect(sectionSelect).toBeVisible();
+    await expect(sectionSelect).toHaveValue("verse");
+
+    const styles = await sectionSelect.evaluate((element) => {
+      const computed = window.getComputedStyle(element);
+      return {
+        colorScheme: computed.colorScheme,
+        background: computed.backgroundColor,
+        color: computed.color,
+      };
+    });
+
+    expect(styles.colorScheme).toContain("dark");
+    expect(styles.background).not.toBe("rgb(255, 255, 255)");
+    expect(styles.color).not.toBe("rgb(255, 255, 255)");
+  });
 });
