@@ -6,7 +6,29 @@ const seededSong = {
   title: "Primeira Canção",
   artist: "Cifrases",
   key: "G",
-  sections: [{ id: "section-1", type: "verse", label: "Verso", lines: [{ id: "line-1", text: "Primeira linha" }] }],
+  sections: [
+    {
+      id: "section-intro",
+      type: "intro",
+      label: "Introdução",
+      lines: [{ id: "line-intro", text: "A música começa quando o tempo encontra a letra.", chords: [{ chord: "G", position: 0 }, { chord: "C", position: 24 }] }],
+    },
+    {
+      id: "section-verse",
+      type: "verse",
+      label: "Verso",
+      lines: [
+        { id: "line-verse-1", text: "Cada acorde abre espaço para a próxima frase.", chords: [{ chord: "G", position: 0 }, { chord: "D", position: 22 }] },
+        { id: "line-verse-2", text: "Cada palavra encontra o seu lugar.", chords: [{ chord: "Em", position: 0 }, { chord: "C", position: 19 }] },
+      ],
+    },
+    {
+      id: "section-chorus",
+      type: "chorus",
+      label: "Refrão",
+      lines: [{ id: "line-chorus", text: "E quando tudo se alinha, a música acontece.", chords: [{ chord: "C", position: 0 }, { chord: "G", position: 26 }, { chord: "D", position: 39 }] }],
+    },
+  ],
 };
 
 test.describe("Cifrases", () => {
@@ -27,6 +49,12 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Detalhes da música")).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
+    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "1. Introdução" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "2. Verso" })).toBeVisible();
+    await expect(page.locator(".text-chord").filter({ hasText: "G" }).first()).toBeVisible();
+    await page.getByRole("button", { name: "2. Verso" }).click();
+    await expect(page.getByText("Cada acorde abre espaço para a próxima frase.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Biblioteca" }).last()).toBeVisible();
   });
 

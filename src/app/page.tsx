@@ -1093,7 +1093,6 @@ function DetailView({
         <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[220px_1fr]">
           <div className="aspect-square overflow-hidden rounded-2xl bg-brand/10">
             {coverUrl ? (
-              // biome-ignore lint/a11y/useAltText: cover image uses the song title as accessible context.
               <img src={coverUrl} alt={`Capa de ${song.title}`} className="h-full w-full object-cover" />
             ) : (
               <div className="grid h-full place-items-center text-5xl font-black text-brand-soft">{song.title.slice(0, 1).toUpperCase()}</div>
@@ -1246,9 +1245,24 @@ function PlayerView({
         </div>
       ) : null}
 
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
+        <nav className="flex min-w-max gap-2" aria-label="Navegação entre seções">
+          {song.sections.map((section, index) => (
+            <button
+              key={section.id}
+              type="button"
+              className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-muted transition hover:border-brand/30 hover:text-foreground"
+              onClick={() => document.getElementById(`player-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            >
+              {index + 1}. {sectionName(section)}
+            </button>
+          ))}
+        </nav>
+      </div>
+
       <div className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-surface p-5 sm:p-8" style={{ fontSize: `${fontScale}rem` }}>
         {song.sections.map((section) => (
-          <section key={section.id}>
+          <section key={section.id} id={`player-section-${section.id}`}>
             <div className="mb-4 flex items-center gap-3">
               <span className="h-px flex-1 bg-white/8" />
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">{sectionName(section)}</span>
