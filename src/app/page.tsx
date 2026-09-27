@@ -121,6 +121,7 @@ export default function HomePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Song | null>(null);
   const [draftOriginal, setDraftOriginal] = useState<Song | null>(null);
+  const [draftMode, setDraftMode] = useState<"create" | "edit">("create");
   const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("title");
@@ -235,6 +236,7 @@ export default function HomePage() {
     const next = emptySong();
     setDraft(next);
     setDraftOriginal(cloneSong(next));
+    setDraftMode("create");
     setDraftErrors({});
     setMobileMenu(false);
     setView("editor");
@@ -244,6 +246,7 @@ export default function HomePage() {
     const next = cloneSong(item);
     setDraft(next);
     setDraftOriginal(cloneSong(next));
+    setDraftMode("edit");
     setDraftErrors({});
     setSelectedId(item.id);
     setMobileMenu(false);
@@ -294,6 +297,7 @@ export default function HomePage() {
     setSelectedId(next.id);
     setDraft(null);
     setDraftOriginal(null);
+    setDraftMode("create");
     setDraftErrors({});
     setView("player");
   }
@@ -502,6 +506,7 @@ export default function HomePage() {
           onSave={saveDraft}
           onCancel={cancelDraft}
           dirty={draftDirty}
+          mode={draftMode}
           errors={draftErrors}
           onAddSection={addSection}
           onAddLine={addLine}
@@ -822,6 +827,7 @@ function EditorView({
   song,
   setSong,
   dirty,
+  mode,
   errors,
   onSave,
   onCancel,
@@ -836,6 +842,7 @@ function EditorView({
   song: Song;
   setSong: (song: Song | null) => void;
   dirty: boolean;
+  mode: "create" | "edit";
   errors: DraftErrors;
   onSave: () => void;
   onCancel: () => void;
@@ -868,7 +875,7 @@ function EditorView({
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">{song.id && "Editar música"}</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">{mode === "edit" ? "Editar música" : "Cadastrar música"}</h1>
           <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
           {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null>
         </div>
