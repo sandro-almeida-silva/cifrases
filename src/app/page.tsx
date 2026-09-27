@@ -220,6 +220,7 @@ export default function HomePage() {
   }, [playing, song]);
 
   function openSong(id: string) {
+    setMobileMenu(false);
     setSelectedId(id);
     setTranspose(0);
     setCurrentSecond(0);
