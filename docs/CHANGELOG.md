@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.0...v1.0.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* satisfy Biome quality checks ([869a2af](https://github.com/sandro-almeida-silva/cifrases/commit/869a2afdc522b1b268e4e8bc29b64513f1cef8ac))
+* satisfy Biome quality checks ([518a4d7](https://github.com/sandro-almeida-silva/cifrases/commit/518a4d772abd44628a6b4ea8c8c47f6c990a9b4c))
+* satisfy Biome quality checks ([f28238f](https://github.com/sandro-almeida-silva/cifrases/commit/f28238f105e1460cc6705bebd1142e470995577b))
+* satisfy Biome quality checks ([942de18](https://github.com/sandro-almeida-silva/cifrases/commit/942de18da950f638140b43ebb2cbeb3ad2a1f61f))
+* satisfy Biome quality checks ([d79d496](https://github.com/sandro-almeida-silva/cifrases/commit/d79d496a544b9cd55741e6a19780911e155efdb4))
+* satisfy Biome quality checks ([88495a0](https://github.com/sandro-almeida-silva/cifrases/commit/88495a08913bf2570977f74eb04fb56338482ec9))
+* satisfy Biome quality checks ([cb41c99](https://github.com/sandro-almeida-silva/cifrases/commit/cb41c9939a199b04f6f1d813ee59cfd4f1c33576))
+* satisfy Biome quality checks ([0280ac5](https://github.com/sandro-almeida-silva/cifrases/commit/0280ac5dbc5600e9f808399c1d93b38e3976f350))
+
 # 1.0.0 (2026-09-27)
 
 
