@@ -306,8 +306,15 @@ export default function HomePage() {
     if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
     setDraft(null);
     setDraftOriginal(null);
+    setDraftMode("create");
     setDraftErrors({});
     setView(song ? "player" : "library");
+  }
+
+  function navigateFromEditor(nextView: View) {
+    if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+    setView(nextView);
+    setMobileMenu(false);
   }
 
   function deleteSong(id: string) {
@@ -528,7 +535,7 @@ export default function HomePage() {
           currentSecond={currentSecond}
           playing={playing}
           audioRef={audioRef}
-          onBack={() => setView("library")}
+          onBack={() => navigateFromEditor("library")}
           onEdit={() => song && startEdit(song)}
           onTranspose={setTranspose}
           onFontScale={setFontScale}
@@ -604,10 +611,10 @@ export default function HomePage() {
           </button>
 
           <nav className="mt-7 space-y-1" aria-label="Navegação principal">
-            <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} collapsed={desktopSidebarCollapsed} onClick={() => setView("library")} />
+            <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("library")} />
             <NavButton icon={<PencilIcon />} label="Editor" active={view === "editor"} collapsed={desktopSidebarCollapsed} onClick={() => startEdit(song ?? songs[0] ?? emptySong())} />
-            <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} collapsed={desktopSidebarCollapsed} onClick={() => setView("presentation")} />
-            <NavButton icon={<Settings2 size={17} />} label="Configurações" active={view === "settings"} collapsed={desktopSidebarCollapsed} onClick={() => setView("settings")} />
+            <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("presentation")} />
+            <NavButton icon={<Settings2 size={17} />} label="Configurações" active={view === "settings"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("settings")} />
           </nav>
         </aside>
 
