@@ -403,3 +403,21 @@ test.describe("Cifrases", () => {
   });
 
 });
+
+  test("controls synchronized auto-scroll without taking over manual reading", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Tocar" }).click();
+    await expect(page.getByText("Rolagem automática")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Pausar" }).click();
+    await expect(page.getByRole("button", { name: "Retomar" })).toHaveAttribute("aria-pressed", "false");
+    await page.getByRole("button", { name: "Retomar" }).click();
+    await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Auto-scroll off" }).click();
+    await expect(page.getByRole("button", { name: "Desativada" })).toBeDisabled();
+  });
