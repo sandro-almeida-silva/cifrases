@@ -1410,7 +1410,7 @@ function PlayerView({
               key={section.id}
               type="button"
               aria-current={activeSectionId === section.id ? "location" : undefined}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground ${activeSectionId === section.id ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`
+              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground ${activeSectionId === section.id ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`}
               onClick={() => document.getElementById(`player-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
               {index + 1}. {sectionName(section)}
