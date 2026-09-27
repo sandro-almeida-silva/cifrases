@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   AudioLines,
   ChevronLeft,
   ChevronRight,
@@ -111,6 +113,7 @@ export default function HomePage() {
   const [view, setView] = useState<View>("library");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Song | null>(null);
+  const [draftErrors, setDraftErrors] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("title");
   const [category, setCategory] = useState("all");
@@ -211,19 +214,42 @@ export default function HomePage() {
 
   function startNew() {
     setDraft(emptySong());
+    setDraftErrors({});
     setMobileMenu(false);
     setView("editor");
   }
 
   function startEdit(item: Song) {
     setDraft(cloneSong(item));
+    setDraftErrors({});
     setSelectedId(item.id);
     setMobileMenu(false);
     setView("editor");
   }
 
   function saveDraft() {
-    if (!draft?.title.trim()) return;
+    if (!draft) return;
+    const errors: Record<string, string> = {};
+    if (!draft.title.trim()) errors.title = "Informe o título da música.";
+    if (draft.bpm !== undefined && (draft.bpm < 1 || draft.bpm > 300)) errors.bpm = "Informe um BPM entre 1 e 300.";
+    if (draft.sections.length === 0) {
+      errors.sections = "Adicione pelo menos uma seção.";
+    }
+
+    draft.sections.forEach((section, sectionIndex) => {
+      if (!section.label?.trim()) errors[`section-${section.id}`] = "Informe o nome da seção.";
+      if (section.lines.length === 0) errors[`lines-${section.id}`] = "Adicione pelo menos uma linha.";
+      section.lines.forEach((item, lineIndex) => {
+        if (!item.text.trim() && !(item.chords?.length)) {
+          errors[`line-${item.id}`] = `Informe a letra ou um acorde na linha ${lineIndex + 1}.`;
+        }
+      });
+      void sectionIndex;
+    });
+
+    setDraftErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     const generatedBaseSlug = slugify(draft.title);
     const existingSlugs = new Set(
       songs
@@ -245,6 +271,7 @@ export default function HomePage() {
     });
     setSelectedId(next.id);
     setDraft(null);
+    setDraftErrors({});
     setView("player");
   }
 
@@ -290,6 +317,35 @@ export default function HomePage() {
       sections: current.sections.map((section) =>
         section.id === sectionId
           ? { ...section, lines: [...section.lines, line(`line-${Date.now()}`)] }
+          : section,
+      ),
+    }));
+  }
+
+  function moveSection(sectionId: string, direction: -1 | 1) {
+    updateDraft((current) => {
+      const index = current.sections.findIndex((section) => section.id === sectionId);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.sections.length) return current;
+      const sections = [...current.sections];
+      [sections[index], sections[target]] = [sections[target], sections[index]];
+      return { ...current, sections };
+    });
+  }
+
+  function removeSection(sectionId: string) {
+    updateDraft((current) => {
+      if (current.sections.length <= 1) return current;
+      return { ...current, sections: current.sections.filter((section) => section.id !== sectionId) };
+    });
+  }
+
+  function removeLine(sectionId: string, lineId: string) {
+    updateDraft((current) => ({
+      ...current,
+      sections: current.sections.map((section) =>
+        section.id === sectionId
+          ? { ...section, lines: section.lines.filter((item) => item.id !== lineId) }
           : section,
       ),
     }));
@@ -410,8 +466,12 @@ export default function HomePage() {
           setSong={setDraft}
           onSave={saveDraft}
           onCancel={() => setView(song ? "player" : "library")}
+          errors={draftErrors}
           onAddSection={addSection}
           onAddLine={addLine}
+          onMoveSection={moveSection}
+          onRemoveSection={removeSection}
+          onRemoveLine={removeLine}
           onAttachAudio={attachAudio}
           onBuildTimeline={buildTimeline}
         />
@@ -725,19 +785,27 @@ function LibraryView({
 function EditorView({
   song,
   setSong,
+  errors,
   onSave,
   onCancel,
   onAddSection,
   onAddLine,
+  onMoveSection,
+  onRemoveSection,
+  onRemoveLine,
   onAttachAudio,
   onBuildTimeline,
 }: {
   song: Song;
   setSong: (song: Song | null) => void;
+  errors: Record<string, string>;
   onSave: () => void;
   onCancel: () => void;
   onAddSection: () => void;
   onAddLine: (sectionId: string) => void;
+  onMoveSection: (sectionId: string, direction: -1 | 1) => void;
+  onRemoveSection: (sectionId: string) => void;
+  onRemoveLine: (sectionId: string, lineId: string) => void;
   onAttachAudio: (file: File) => void;
   onBuildTimeline: () => void;
 }) {
@@ -750,12 +818,20 @@ function EditorView({
     });
   }
 
+  function changeLine(sectionId: string, lineId: string, updater: (item: SongLine) => SongLine) {
+    changeSection(sectionId, (section) => ({
+      ...section,
+      lines: section.lines.map((item) => (item.id === lineId ? updater(item) : item)),
+    }));
+  }
+
   return (
     <section>
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">Cadastrar música</h1>
+          <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
         </div>
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onCancel}>Cancelar</button>
@@ -765,18 +841,30 @@ function EditorView({
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {[
-          ["Título", song.title, (value: string) => setSong({ ...song, title: value })],
-          ["Artista", song.artist ?? "", (value: string) => setSong({ ...song, artist: value })],
-          ["Categoria", song.category ?? "", (value: string) => setSong({ ...song, category: value })],
-          ["Tonalidade", song.key ?? "", (value: string) => setSong({ ...song, key: value.toUpperCase() })],
-          ["BPM", String(song.bpm ?? ""), (value: string) => setSong({ ...song, bpm: Number(value) || undefined })],
-        ].map(([label, value, update]) => (
-          <label key={label as string}>
+          ["Título", song.title, (value: string) => setSong({ ...song, title: value }), "title"],
+          ["Artista", song.artist ?? "", (value: string) => setSong({ ...song, artist: value }), "artist"],
+          ["Categoria", song.category ?? "", (value: string) => setSong({ ...song, category: value }), "category"],
+          ["Tonalidade", song.key ?? "", (value: string) => setSong({ ...song, key: value.toUpperCase() }), "key"],
+          ["BPM", String(song.bpm ?? ""), (value: string) => setSong({ ...song, bpm: value ? Number(value) : undefined }), "bpm"],
+        ].map(([label, value, update, field]) => (
+          <label key={field as string}>
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-muted">{label as string}</span>
-            <input className={inputClass} value={value as string} onChange={(event) => (update as (value: string) => void)(event.target.value)} />
+            <input
+              className={`${inputClass} ${errors[field as string] ? "border-red-400/60" : ""}`}
+              value={value as string}
+              type={field === "bpm" ? "number" : "text"}
+              min={field === "bpm" ? 1 : undefined}
+              max={field === "bpm" ? 300 : undefined}
+              onChange={(event) => (update as (value: string) => void)(event.target.value)}
+              aria-invalid={Boolean(errors[field as string])}
+              aria-describedby={errors[field as string] ? `${field}-error` : undefined}
+            />
+            {errors[field as string] ? <span id={`${field}-error`} className="mt-1 block text-xs text-red-300">{errors[field as string]}</span> : null}
           </label>
         ))}
       </div>
+
+      {errors.sections ? <p className="mt-4 text-sm text-red-300">{errors.sections}</p> : null}
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -807,25 +895,46 @@ function EditorView({
                 ariaLabel={`Tipo da seção ${sectionIndex + 1}`}
                 className="w-40 shrink-0"
               />
-                {sectionTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-
-              <input className={inputClass} aria-label={`Nome da seção ${sectionIndex + 1}`} value={section.label ?? ""} onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))} />
+              <input
+                className={`${inputClass} ${errors[`section-${section.id}`] ? "border-red-400/60" : ""}`}
+                aria-label={`Nome da seção ${sectionIndex + 1}`}
+                aria-invalid={Boolean(errors[`section-${section.id}`])}
+                value={section.label ?? ""}
+                onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))}
+              />
               <span className="text-xs text-muted">#{sectionIndex + 1}</span>
+              <div className="ml-auto flex gap-1">
+                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30" onClick={() => onMoveSection(section.id, -1)} disabled={sectionIndex === 0} aria-label={`Mover seção ${sectionIndex + 1} para cima`}><ArrowUp size={15} /></button>
+                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30" onClick={() => onMoveSection(section.id, 1)} disabled={sectionIndex === song.sections.length - 1} aria-label={`Mover seção ${sectionIndex + 1} para baixo`}><ArrowDown size={15} /></button>
+                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30 hover:text-red-200" onClick={() => onRemoveSection(section.id)} disabled={song.sections.length <= 1} aria-label={`Remover seção ${sectionIndex + 1}`}><Trash2 size={15} /></button>
+              </div>
             </div>
+            {errors[`section-${section.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`section-${section.id}`]}</span> : null}
 
             <div className="mt-4 space-y-2">
               {section.lines.map((item, lineIndex) => (
-                <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_260px]">
-                  <input className={inputClass} aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`} placeholder="Letra" value={item.text} onChange={(event) => changeSection(section.id, (current) => ({
-                    ...current,
-                    lines: current.lines.map((currentLine) => currentLine.id === item.id ? { ...currentLine, text: event.target.value } : currentLine),
-                  }))} />
-                  <input className={`${inputClass} font-mono text-chord`} aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`} placeholder="G@0 C@20 D@35" value={chordText(item.chords)} onChange={(event) => changeSection(section.id, (current) => ({
-                    ...current,
-                    lines: current.lines.map((currentLine) => currentLine.id === item.id ? { ...currentLine, chords: parseChords(event.target.value) } : currentLine),
-                  }))} />
+                <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_260px_auto]">
+                  <div>
+                    <input
+                      className={`${inputClass} ${errors[`line-${item.id}`] ? "border-red-400/60" : ""}`}
+                      aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
+                      placeholder="Letra"
+                      value={item.text}
+                      onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, text: event.target.value }))}
+                    />
+                    {errors[`line-${item.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`line-${item.id`]}</span> : null}
+                  </div>
+                  <input
+                    className={`${inputClass} font-mono text-chord`}
+                    aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
+                    placeholder="G@0 C@20 D@35"
+                    value={chordText(item.chords)}
+                    onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, chords: parseChords(event.target.value) }))}
+                  />
+                  <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
                 </div>
               ))}
+              {errors[`lines-${section.id}`] ? <p className="text-xs text-red-300">{errors[`lines-${section.id`]}</p> : null}
             </div>
 
             <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2 text-sm text-muted" onClick={() => onAddLine(section.id)}>
