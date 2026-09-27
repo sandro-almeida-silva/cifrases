@@ -922,7 +922,7 @@ function EditorView({
                       value={item.text}
                       onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, text: event.target.value }))}
                     />
-                    {errors[`line-${item.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`line-${item.id`]}</span> : null}
+                    {errors[`line-${item.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`line-${item.id}`]}</span> : null}
                   </div>
                   <input
                     className={`${inputClass} font-mono text-chord`}
@@ -934,7 +934,7 @@ function EditorView({
                   <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
                 </div>
               ))}
-              {errors[`lines-${section.id}`] ? <p className="text-xs text-red-300">{errors[`lines-${section.id`]}</p> : null}
+              {errors[`lines-${section.id}`] ? <p className="text-xs text-red-300">{errors[`lines-${section.id}`]}</p> : null}
             </div>
 
             <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2 text-sm text-muted" onClick={() => onAddLine(section.id)}>
