@@ -1,0 +1,40 @@
+{
+  "name": "cifrases",
+  "version": "0.0.0-development",
+  "private": true,
+  "description": "Plataforma musical para descobrir, tocar, sincronizar e apresentar músicas.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.16.1",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "pnpm lint && pnpm typecheck && pnpm build",
+    "release": "semantic-release"
+  },
+  "dependencies": {
+    "lucide-react": "1.48.0",
+    "next": "16.3.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/github": "12.0.10",
+    "@semantic-release/git": "11.0.1",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "@types/node": "24.10.1",
+    "@types/react": "19.3.13",
+    "@types/react-dom": "19.3.3",
+    "semantic-release": "25.0.9",
+    "typescript": "5.9.3"
+  }
+}
