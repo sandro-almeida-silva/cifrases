@@ -6,7 +6,6 @@ const seededSong = {
   title: "Primeira Canção",
   artist: "Cifrases",
   key: "G",
-  category: "Louvor",
   sections: [{ id: "section-1", type: "verse", label: "Verso", lines: [{ id: "line-1", text: "Primeira linha" }] }],
 };
 
