@@ -24,6 +24,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { Select } from "@/components/ui/select";
 import { sampleSong } from "@/domain/songs/fixtures";
 import {
   cloneSong,
@@ -141,7 +142,7 @@ export default function HomePage() {
   }, [library, theme]);
 
   useEffect(() => {
-    document.documentElement.dataset["theme"] = theme;
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   useEffect(() => {
@@ -619,15 +620,27 @@ function LibraryView({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <select className="ui-select" aria-label="Filtrar por categoria" value={category} onChange={(event) => onCategory(event.target.value)}>
-          <option value="all">Todas</option>
-          {categories.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select className="ui-select" aria-label="Ordenar músicas" value={sort} onChange={(event) => onSort(event.target.value as SortMode)}>
-          <option value="title">Título</option>
-          <option value="artist">Artista</option>
-          <option value="recent">Recentes</option>
-        </select>
+        <Select
+          value={category}
+          options={[
+            { value: "all", label: "Todas" },
+            ...categories.map((item) => ({ value: item, label: item })),
+          ]}
+          onChange={onCategory}
+          ariaLabel="Filtrar por categoria"
+          className="min-w-48"
+        />
+        <Select
+          value={sort}
+          options={[
+            { value: "title", label: "Título" },
+            { value: "artist", label: "Artista" },
+            { value: "recent", label: "Recentes" },
+          ]}
+          onChange={onSort}
+          ariaLabel="Ordenar músicas"
+          className="min-w-48"
+        />
       </div>
 
       {songs.length === 0 ? (
@@ -752,9 +765,15 @@ function EditorView({
         {song.sections.map((section, sectionIndex) => (
           <div key={section.id} className="rounded-3xl border border-white/10 bg-surface p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <select className="ui-select" aria-label={`Tipo da seção ${sectionIndex + 1}`} value={section.type} onChange={(event) => changeSection(section.id, (current) => ({ ...current, type: event.target.value as SongSectionType }))}>
+              <Select
+                value={section.type}
+                options={sectionTypes}
+                onChange={(value) => changeSection(section.id, (current) => ({ ...current, type: value }))}
+                ariaLabel={`Tipo da seção ${sectionIndex + 1}`}
+                className="w-40 shrink-0"
+              />
                 {sectionTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
+
               <input className={inputClass} aria-label={`Nome da seção ${sectionIndex + 1}`} value={section.label ?? ""} onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))} />
               <span className="text-xs text-muted">#{sectionIndex + 1}</span>
             </div>
