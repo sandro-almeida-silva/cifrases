@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.3...v1.0.4) (2026-09-27)
+
+
+### Bug Fixes
+
+* remove deprecated Biome recommended rule ([6cba416](https://github.com/sandro-almeida-silva/cifrases/commit/6cba416e18808a0b10172529b74bedabe4306a5d))
+
 ## [1.0.3](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.2...v1.0.3) (2026-09-27)
 
 
