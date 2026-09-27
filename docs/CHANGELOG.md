@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.0...v1.1.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* simplify Vercel deployment configuration ([ff96e18](https://github.com/sandro-almeida-silva/cifrases/commit/ff96e181ca466fd7426131a2d523387e6168c519))
+
 # [1.1.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.9...v1.1.0) (2026-09-27)
 
 
