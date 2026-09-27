@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.6...v1.0.7) (2026-09-27)
+
+
+### Bug Fixes
+
+* use Webpack for CI production builds ([b42d02d](https://github.com/sandro-almeida-silva/cifrases/commit/b42d02d5c797bd978fbf15f7d5d41c1e7bcbbc23))
+
 ## [1.0.6](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.5...v1.0.6) (2026-09-27)
 
 
