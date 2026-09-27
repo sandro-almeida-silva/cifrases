@@ -11,6 +11,18 @@
   --chord: #f1c96b;
 }
 
+:root[data-theme="gold"] {
+  --brand: #c99a35;
+  --brand-soft: #f1c96b;
+  --chord: #f1c96b;
+}
+
+:root[data-theme="blue"] {
+  --brand: #0c64d3;
+  --brand-soft: #6da8ff;
+  --chord: #f1c96b;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -40,4 +52,9 @@ body {
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
