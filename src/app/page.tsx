@@ -4,8 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   AudioLines,
-  ChevronDown,
-  ChevronUp,
   Heart,
   Library,
   Menu,
@@ -318,7 +316,9 @@ export default function HomePage() {
         if (!valid.length) throw new Error("Nenhuma música válida encontrada.");
         setSongs((state) => {
           const map = new Map(state.map((item) => [item.id, item]));
-          valid.forEach((item) => map.set(item.id, item));
+          valid.forEach((item) => {
+            map.set(item.id, item);
+          });
           return [...map.values()];
         });
         setImportMessage(`${valid.length} música(s) importada(s).`);
@@ -510,7 +510,6 @@ function LibraryView({
   category,
   sort,
   favorites,
-  onSearch,
   onCategory,
   onSort,
   onOpen,
