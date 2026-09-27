@@ -1,0 +1,17 @@
+{
+  "name": "Cifrases",
+  "short_name": "Cifrases",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090c",
+  "theme_color": "#7c5cff",
+  "description": "Sua música, no tempo certo.",
+  "icons": [
+    {
+      "src": "/icons/cifrases.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
