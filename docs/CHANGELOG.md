@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.4.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.3.0...v1.4.0) (2026-09-27)
+
+
+### Features
+
+* **data:** prepare media storage model ([dbc96ff](https://github.com/sandro-almeida-silva/cifrases/commit/dbc96ff13193be09ca374d2e6298065b21ade932))
+
 # [1.3.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.2...v1.3.0) (2026-09-27)
 
 
