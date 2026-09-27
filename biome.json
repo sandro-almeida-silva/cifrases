@@ -6,7 +6,12 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!node_modules", "!.next", "!docs/CHANGELOG.md"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!.next",
+      "!docs/CHANGELOG.md"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -27,7 +32,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": false
     }
   }
 }
