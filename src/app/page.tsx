@@ -1093,7 +1093,6 @@ function DetailView({
         <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[220px_1fr]">
           <div className="aspect-square overflow-hidden rounded-2xl bg-brand/10">
             {coverUrl ? (
-              // biome-ignore lint/a11y/useAltText: cover image uses the song title as accessible context.
               <img src={coverUrl} alt={`Capa de ${song.title}`} className="h-full w-full object-cover" />
             ) : (
               <div className="grid h-full place-items-center text-5xl font-black text-brand-soft">{song.title.slice(0, 1).toUpperCase()}</div>
@@ -1258,7 +1257,7 @@ function PlayerView({
               {index + 1}. {sectionName(section)}
             </button>
           ))}
-        </div>
+        </nav>
       </div>
 
       <div className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-surface p-5 sm:p-8" style={{ fontSize: `${fontScale}rem` }}>
