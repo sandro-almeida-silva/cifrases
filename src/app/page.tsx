@@ -32,6 +32,7 @@ import {
   createSongId,
   loadLibraryState,
   loadSongs,
+  resolveMediaUrl,
   saveLibraryState,
   saveSongs,
   slugify,
@@ -40,7 +41,7 @@ import {
 import { transposeChord, transposeKey } from "@/domain/songs/transpose";
 import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType } from "@/domain/songs/types";
 
-type View = "library" | "editor" | "player" | "presentation" | "settings";
+type View = "library" | "editor" | "detail" | "player" | "presentation" | "settings";
 type SortMode = "title" | "artist" | "recent";
 
 type DraftErrors = {
@@ -230,7 +231,32 @@ export default function HomePage() {
       ...state,
       recent: [id, ...state.recent.filter((item) => item !== id)].slice(0, 20),
     }));
-    setView("player");
+    setView("detail");
+  }
+
+  function duplicateSong(item: Song) {
+    const copyBaseTitle = `${item.title} (cópia)`;
+    const existingTitles = new Set(songs.map((songItem) => songItem.title));
+    let title = copyBaseTitle;
+    let suffix = 2;
+    while (existingTitles.has(title)) {
+      title = `${copyBaseTitle} ${suffix}`;
+      suffix += 1;
+    }
+
+    const copy = {
+      ...cloneSong(item),
+      id: createSongId(),
+      title,
+      slug: slugify(title),
+    };
+    setSongs((state) => [copy, ...state]);
+    setSelectedId(copy.id);
+    setLibrary((state) => ({
+      ...state,
+      recent: [copy.id, ...state.recent.filter((id) => id !== copy.id)].slice(0, 20),
+    }));
+    setView("detail");
   }
 
   function startNew() {
@@ -526,6 +552,18 @@ export default function HomePage() {
         />
       ) : null}
 
+      {view === "detail" ? (
+        <DetailView
+          song={song}
+          onBack={() => navigateFromEditor("library")}
+          onPlay={() => song && setView("player")}
+          onEdit={() => song && startEdit(song)}
+          onDuplicate={() => song && duplicateSong(song)}
+          onDelete={() => song && deleteSong(song.id)}
+          onPresentation={() => song && setView("presentation")}
+        />
+      ) : null}
+
       {view === "player" ? (
         <PlayerView
           song={song}
@@ -536,7 +574,7 @@ export default function HomePage() {
           currentSecond={currentSecond}
           playing={playing}
           audioRef={audioRef}
-          onBack={() => navigateFromEditor("library")}
+          onBack={() => setView("detail")}
           onEdit={() => song && startEdit(song)}
           onTranspose={setTranspose}
           onFontScale={setFontScale}
@@ -1012,6 +1050,123 @@ function EditorView({
         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBuildTimeline}><AudioLines size={15} /> Timeline inicial</button>
       </div>
     </section>
+  );
+}
+
+function DetailView({
+  song,
+  onBack,
+  onPlay,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onPresentation,
+}: {
+  song: Song | null;
+  onBack: () => void;
+  onPlay: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onPresentation: () => void;
+}) {
+  if (!song) {
+    return (
+      <section className="rounded-3xl border border-dashed border-white/15 p-10 text-center">
+        <h1 className="text-2xl font-black">Música indisponível</h1>
+        <p className="mt-2 text-sm text-muted">A música solicitada não existe mais ou não está disponível na biblioteca.</p>
+        <button type="button" className="mt-5 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white" onClick={onBack}>Voltar para a biblioteca</button>
+      </section>
+    );
+  }
+
+  const coverUrl = resolveMediaUrl(song.media, "cover");
+  const audioUrl = resolveMediaUrl(song.media, "audio");
+  const timelineAvailable = Boolean(song.timeline?.events.length);
+  const presentationAvailable = song.sections.length > 0;
+
+  return (
+    <section>
+      <button type="button" className="inline-flex items-center gap-2 text-sm text-muted" onClick={onBack}><ArrowLeft size={15} /> Biblioteca</button>
+
+      <div className="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-surface">
+        <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[220px_1fr]">
+          <div className="aspect-square overflow-hidden rounded-2xl bg-brand/10">
+            {coverUrl ? (
+              // biome-ignore lint/a11y/useAltText: cover image uses the song title as accessible context.
+              <img src={coverUrl} alt={`Capa de ${song.title}`} className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full place-items-center text-5xl font-black text-brand-soft">{song.title.slice(0, 1).toUpperCase()}</div>
+            )}
+          </div>
+
+          <div className="flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Detalhes da música</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{song.title}</h1>
+              <p className="mt-2 text-base text-muted">{song.artist || "Artista não informado"}</p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                {song.key ? <span className="rounded-full bg-chord/10 px-3 py-1.5 text-chord">Tonalidade {song.key}</span> : null}
+                {song.bpm ? <span className="rounded-full bg-white/5 px-3 py-1.5 text-muted">{song.bpm} BPM</span> : null}
+                {song.category ? <span className="rounded-full bg-white/5 px-3 py-1.5 text-muted">{song.category}</span> : null}
+                <span className="rounded-full bg-white/5 px-3 py-1.5 text-muted">{song.sections.length} seções</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white" onClick={onPlay}><Play size={16} fill="currentColor" /> Tocar</button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onEdit}><Pencil size={16} /> Editar</button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onDuplicate}><Plus size={16} /> Duplicar</button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onPresentation} disabled={!presentationAvailable}><Presentation size={16} /> Apresentar</button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-red-400/20 px-4 py-2.5 text-sm text-red-200" onClick={onDelete}><Trash2 size={16} /> Excluir</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 border-t border-white/10 p-5 sm:grid-cols-3">
+          <ResourceCard label="Áudio" available={Boolean(audioUrl)} detail={audioUrl ? "Disponível para reprodução" : "Nenhum áudio associado"} />
+          <ResourceCard label="Timeline" available={timelineAvailable} detail={timelineAvailable ? `${song.timeline?.events.length} eventos` : "Ainda não configurada"} />
+          <ResourceCard label="Apresentação" available={presentationAvailable} detail={presentationAvailable ? "Estrutura pronta para 16:9" : "Sem estrutura"} />
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-3xl border border-white/10 bg-surface p-5 sm:p-7">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Estrutura</h2>
+            <p className="mt-1 text-sm text-muted">Conteúdo persistido da música.</p>
+          </div>
+          <span className="text-xs text-muted">{song.sections.reduce((total, section) => total + section.lines.length, 0)} linhas</span>
+        </div>
+        <div className="mt-5 space-y-6">
+          {song.sections.map((section) => (
+            <div key={section.id}>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-soft">{sectionName(section)}</p>
+              <div className="mt-2 space-y-2">
+                {section.lines.map((item) => (
+                  <div key={item.id} className="rounded-xl bg-background/40 px-3 py-2">
+                    <p className="font-medium">{item.text || "Linha instrumental"}</p>
+                    {item.chords?.length ? <p className="mt-1 font-mono text-xs text-chord">{chordText(item.chords)}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResourceCard({ label, available, detail }: { label: string; available: boolean; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-background/30 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold">{label}</span>
+        <span className={`rounded-full px-2 py-1 text-[11px] ${available ? "bg-emerald-400/10 text-emerald-200" : "bg-white/5 text-muted"}`}>{available ? "Disponível" : "Indisponível"}</span>
+      </div>
+      <p className="mt-2 text-xs text-muted">{detail}</p>
+    </div>
   );
 }
 
