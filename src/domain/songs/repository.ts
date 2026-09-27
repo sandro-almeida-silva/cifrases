@@ -1,7 +1,8 @@
-import type { Song } from "./types";
+import type { Song, SongMedia, SongMediaKind, SongMediaRef } from "./types";
 
 export const SONGS_STORAGE_KEY = "cifrases:songs:v1";
 export const LIBRARY_STORAGE_KEY = "cifrases:library:v1";
+export const MEDIA_STORAGE_PREFIX = "cifrases:media:v1";
 
 export type LibraryState = {
   favorites: string[];
@@ -83,6 +84,36 @@ export function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+export function buildMediaStoragePath(songId: string, kind: SongMediaKind, mediaId: string): string {
+  return `${MEDIA_STORAGE_PREFIX}/${songId}/${kind}/${mediaId}`;
+}
+
+export function createMediaRef(params: {
+  songId: string;
+  kind: SongMediaKind;
+  path: string;
+  mimeType: string;
+  size: number;
+  id?: string;
+}): SongMediaRef {
+  return {
+    id: params.id ?? globalThis.crypto?.randomUUID?.() ?? `media-${Date.now()}`,
+    kind: params.kind,
+    path: params.path,
+    mimeType: params.mimeType,
+    size: params.size,
+  };
+}
+
+export function resolveMediaUrl(media: SongMedia | undefined, kind: SongMediaKind = "audio"): string | undefined {
+  const ref = media?.[kind];
+  if (ref?.path) return ref.path;
+
+  if (kind === "audio") return media?.audioUrl;
+  if (kind === "cover") return media?.coverUrl;
+  return media?.originalImageUrl;
 }
 
 export function saveSongs(songs: Song[]): void {
