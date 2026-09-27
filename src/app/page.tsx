@@ -5,9 +5,17 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
 export default function HomePage() {
+  const features: Array<[string, LucideIcon]> = [
+    ["Biblioteca", LibraryBig],
+    ["Player", Play],
+    ["Sincronização", AudioLines],
+    ["Experiência", Sparkles],
+  ];
+
   return (
     <main className="min-h-screen overflow-hidden bg-background">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-12">
@@ -85,12 +93,7 @@ export default function HomePage() {
         </section>
 
         <section className="grid gap-3 border-t border-white/10 py-7 sm:grid-cols-4">
-          {[
-            ["Biblioteca", LibraryBig],
-            ["Player", Play],
-            ["Sincronização", AudioLines],
-            ["Experiência", Sparkles],
-          ].map(([label, Icon]) => (
+          {features.map(([label, Icon]) => (
             <div
               key={String(label)}
               className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"
