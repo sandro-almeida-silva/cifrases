@@ -23,7 +23,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm exec biome check --write .
+      - run: pnpm exec biome format --write .
       - run: tar -czf biome-formatted.tgz --exclude=node_modules --exclude=.git .
       - uses: actions/upload-artifact@v4
         with:
