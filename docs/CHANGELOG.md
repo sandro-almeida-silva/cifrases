@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.2.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.2...v1.2.0) (2026-09-27)
+
+
+### Features
+
+* refine sidebar and gold visual system ([6606657](https://github.com/sandro-almeida-silva/cifrases/commit/66066577f4ac9b07df7dcd150bc8346edf392165))
+
 ## [1.1.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.1...v1.1.2) (2026-09-27)
 
 
