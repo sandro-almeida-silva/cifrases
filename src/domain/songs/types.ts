@@ -35,7 +35,13 @@ export type SongMediaRef = {
   size: number;
 };
 
-export type SongMedia = {
+export type SongMediaLegacy = {
+  audioUrl?: string;
+  coverUrl?: string;
+  originalImageUrl?: string;
+};
+
+export type SongMedia = SongMediaLegacy & {
   audio?: SongMediaRef;
   cover?: SongMediaRef;
   original?: SongMediaRef;
