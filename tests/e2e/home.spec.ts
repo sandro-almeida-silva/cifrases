@@ -69,6 +69,37 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("button", { name: "Biblioteca" }).last()).toBeVisible();
   });
 
+  test("persists player reading preferences", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Tocar" }).click();
+
+    const lyric = page.getByText("A música começa quando o tempo encontra a letra.");
+    const initialSize = await lyric.evaluate((element) => getComputedStyle(element).fontSize);
+
+    await page.getByRole("button", { name: "A+" }).click();
+    await expect.poll(() => lyric.evaluate((element) => getComputedStyle(element).fontSize)).not.toBe(initialSize);
+
+    await page.getByRole("button", { name: "Espaço +" }).click();
+    await page.getByRole("button", { name: "Largura" }).click();
+    await page.getByRole("button", { name: "Alto contraste" }).click();
+    await expect(page.getByRole("button", { name: "Alto contraste" })).toHaveAttribute("aria-pressed", "true");
+
+    await page.reload();
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Tocar" }).click();
+    await expect(page.getByRole("button", { name: "Alto contraste" })).toHaveAttribute("aria-pressed", "true");
+
+    await page.getByRole("button", { name: "Restaurar padrão" }).click();
+    await expect(page.getByRole("button", { name: "Alto contraste" })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByRole("button", { name: "Tela cheia" })).toBeVisible();
+  });
+
   test("duplicates and deletes a song from details", async ({ page }, testInfo) => {
     await page.goto("/");
     if (testInfo.project.name === "mobile-chrome") {
