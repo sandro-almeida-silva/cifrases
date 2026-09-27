@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.6.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.5.0...v1.6.0) (2026-09-27)
+
+
+### Features
+
+* **editor:** complete manual song registration ([21b7526](https://github.com/sandro-almeida-silva/cifrases/commit/21b7526d82d0a6b89c1807c7774160e83d294b4b))
+
 # [1.5.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.4.0...v1.5.0) (2026-09-27)
 
 
