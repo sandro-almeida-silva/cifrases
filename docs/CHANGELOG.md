@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.10.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.9.0...v1.10.0) (2026-09-27)
+
+
+### Features
+
+* **player:** robust chord transposition ([a0ea30a](https://github.com/sandro-almeida-silva/cifrases/commit/a0ea30a1eb97fb6fbb19a34c6f626091302deb4f))
+
 # [1.9.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.8.0...v1.9.0) (2026-09-27)
 
 
