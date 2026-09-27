@@ -25,7 +25,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Select } from "@/components/ui/select";
-import { sampleSong } from "@/domain/songs/fixtures";
 import {
   cloneSong,
   createSongId,
@@ -99,6 +98,8 @@ function sectionName(section: SongSection): string {
 
 export default function HomePage() {
   const [songs, setSongs] = useState<Song[]>([]);
+  const [libraryStatus, setLibraryStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [libraryError, setLibraryError] = useState("");
   const [library, setLibrary] = useState<LibraryState>({
     favorites: [],
     recent: [],
@@ -126,11 +127,19 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const stored = loadSongs();
-    setSongs(stored.length > 0 ? stored : [cloneSong(sampleSong)]);
-    const storedLibrary = loadLibraryState();
-    setLibrary(storedLibrary);
-    setTheme(storedLibrary.theme);
+    try {
+      setLibraryStatus("loading");
+      const stored = loadSongs();
+      const storedLibrary = loadLibraryState();
+      setSongs(stored);
+      setLibrary(storedLibrary);
+      setTheme(storedLibrary.theme);
+      setLibraryStatus("ready");
+    } catch {
+      setSongs([]);
+      setLibraryError("Não foi possível carregar sua biblioteca. Tente novamente.");
+      setLibraryStatus("error");
+    }
   }, []);
 
   useEffect(() => {
@@ -376,6 +385,9 @@ export default function HomePage() {
       {view === "library" ? (
         <LibraryView
           songs={filteredSongs}
+          totalSongs={songs.length}
+          status={libraryStatus}
+          error={libraryError}
           categories={categories}
           category={category}
           sort={sort}
@@ -570,6 +582,9 @@ function NavButton({
 
 function LibraryView({
   songs,
+  totalSongs,
+  status,
+  error,
   categories,
   category,
   sort,
@@ -584,6 +599,9 @@ function LibraryView({
   onImport,
 }: {
   songs: Song[];
+  totalSongs: number;
+  status: "loading" | "ready" | "error";
+  error: string;
   categories: string[];
   category: string;
   sort: SortMode;
@@ -643,10 +661,27 @@ function LibraryView({
         />
       </div>
 
-      {songs.length === 0 ? (
+      {status === "loading" ? (
+        <div role="status" className="mt-8 rounded-3xl border border-white/10 bg-surface p-10 text-center text-muted">
+          Carregando sua biblioteca...
+        </div>
+      ) : status === "error" ? (
+        <div role="alert" className="mt-8 rounded-3xl border border-red-400/20 bg-red-400/5 p-10 text-center">
+          <h2 className="font-bold">Não foi possível carregar a biblioteca</h2>
+          <p className="mt-2 text-sm text-muted">{error}</p>
+        </div>
+      ) : totalSongs === 0 ? (
+        <div className="mt-8 rounded-3xl border border-dashed border-white/15 p-10 text-center">
+          <Library className="mx-auto text-brand-soft" size={30} />
+          <h2 className="mt-3 font-bold">Sua biblioteca está vazia</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">Cadastre sua primeira música para começar a organizar seu repertório.</p>
+          <button type="button" className="mt-5 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white" onClick={onNew}>Cadastrar primeira música</button>
+        </div>
+      ) : songs.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-dashed border-white/15 p-10 text-center">
           <Library className="mx-auto text-brand-soft" size={30} />
           <h2 className="mt-3 font-bold">Nenhuma música encontrada</h2>
+          <p className="mt-2 text-sm text-muted">Ajuste a busca ou os filtros para encontrar uma música.</p>
         </div>
       ) : (
         <div className="mt-6 grid gap-3 lg:grid-cols-2">
