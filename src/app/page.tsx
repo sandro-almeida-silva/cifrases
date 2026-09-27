@@ -1403,6 +1403,11 @@ function PlayerView({
         </div>
       ) : null}
 
+      <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-surface px-3 py-2 text-xs">
+        <span>{song.timeline?.events.length ? (timelineSynced ? "Sincronizado" : "Aguardando evento") : "Sem sincronização"}</span>
+        <span className="text-muted">{song.timeline?.events.length ? "Timeline" : "Sem timeline"}</span>
+      </div>
+
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
         <nav className="flex min-w-max gap-2" aria-label="Navegação entre seções">
           {song.sections.map((section, index) => (
