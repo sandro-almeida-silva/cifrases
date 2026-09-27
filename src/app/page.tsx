@@ -116,6 +116,7 @@ export default function HomePage() {
     recent: [],
     playlists: [],
     theme: "gold",
+    playerPreferences: defaultPlayerPreferences,
   });
 
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
