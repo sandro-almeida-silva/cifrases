@@ -6,6 +6,7 @@ const seededSong = {
   title: "Primeira Canção",
   artist: "Cifrases",
   key: "G",
+  media: { audioUrl: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" },
   sections: [
     {
       id: "section-intro",
