@@ -532,7 +532,7 @@ export default function HomePage() {
     setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
     audio.volume = audioVolume;
     audio.playbackRate = audioPlaybackRate;
-    const stored = Number(window.sessionStorage.getItem(`cifrases:audio-position:${audio.dataset.songId}`) ?? 0);
+    const stored = Number(window.sessionStorage.getItem(`cifrases:audio-position:${audio.dataset["songId"]}`) ?? 0);
     if (stored > 0 && stored < audio.duration) {
       audio.currentTime = stored;
       setCurrentSecond(stored);
@@ -647,6 +647,7 @@ export default function HomePage() {
           audioError={audioError}
           onAudioLoaded={handleAudioLoaded}
           onAudioError={() => { setAudioError(true); setPlaying(false); }}
+          onAudioEnded={() => setPlaying(false)}
           onSeek={seekAudio}
           onVolume={setAudioVolumeValue}
           onPlaybackRate={setAudioPlaybackRateValue}
@@ -1260,6 +1261,7 @@ function PlayerView({
   audioError,
   onAudioLoaded,
   onAudioError,
+  onAudioEnded,
   onSeek,
   onVolume,
   onPlaybackRate,
@@ -1287,6 +1289,7 @@ function PlayerView({
   audioError: boolean;
   onAudioLoaded: () => void;
   onAudioError: () => void;
+  onAudioEnded: () => void;
   onSeek: (seconds: number) => void;
   onVolume: (value: number) => void;
   onPlaybackRate: (value: number) => void;
@@ -1362,7 +1365,7 @@ function PlayerView({
             preload="metadata"
             onLoadedMetadata={onAudioLoaded}
             onTimeUpdate={(event) => onTime(event.currentTarget.currentTime)}
-            onEnded={() => { onTime(0); onResetAudioPosition(); setPlaying(false); }}
+            onEnded={() => { onTime(0); onResetAudioPosition(); onAudioEnded(); }}
             onError={onAudioError}
           />
           <div className="flex flex-wrap items-center gap-3">
