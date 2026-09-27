@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.3.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.2...v1.3.0) (2026-09-27)
+
+
+### Features
+
+* **storage:** implement media storage for issue [#2](https://github.com/sandro-almeida-silva/cifrases/issues/2) ([393d2c7](https://github.com/sandro-almeida-silva/cifrases/commit/393d2c78b3b4ead84a38f1f1659ec25553ac128a))
+
 ## [1.2.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.1...v1.2.2) (2026-09-27)
 
 
