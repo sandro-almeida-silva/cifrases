@@ -236,7 +236,7 @@ export default function HomePage() {
       errors.sections = "Adicione pelo menos uma seção.";
     }
 
-    draft.sections.forEach((section, sectionIndex) => {
+    draft.sections.forEach((section) => {
       if (!section.label?.trim()) errors[`section-${section.id}`] = "Informe o nome da seção.";
       if (section.lines.length === 0) errors[`lines-${section.id}`] = "Adicione pelo menos uma linha.";
       section.lines.forEach((item, lineIndex) => {
@@ -244,7 +244,6 @@ export default function HomePage() {
           errors[`line-${item.id}`] = `Informe a letra ou um acorde na linha ${lineIndex + 1}.`;
         }
       });
-      void sectionIndex;
     });
 
     setDraftErrors(errors);
