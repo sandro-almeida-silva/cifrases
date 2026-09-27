@@ -43,6 +43,13 @@ import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType } fro
 type View = "library" | "editor" | "player" | "presentation" | "settings";
 type SortMode = "title" | "artist" | "recent";
 
+type DraftErrors = {
+  title?: string;
+  bpm?: string;
+  sections?: string;
+  [key: string]: string | undefined;
+};
+
 const sectionTypes: Array<{ value: SongSectionType; label: string }> = [
   { value: "intro", label: "Introdução" },
   { value: "verse", label: "Verso" },
@@ -113,7 +120,7 @@ export default function HomePage() {
   const [view, setView] = useState<View>("library");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Song | null>(null);
-  const [draftErrors, setDraftErrors] = useState<Record<string, string>>({});
+  const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("title");
   const [category, setCategory] = useState("all");
@@ -229,11 +236,11 @@ export default function HomePage() {
 
   function saveDraft() {
     if (!draft) return;
-    const errors: Record<string, string> = {};
-    if (!draft.title.trim()) errors["title"] = "Informe o título da música.";
-    if (draft.bpm !== undefined && (draft.bpm < 1 || draft.bpm > 300)) errors["bpm"] = "Informe um BPM entre 1 e 300.";
+    const errors: DraftErrors = {};
+    if (!draft.title.trim()) errors.title = "Informe o título da música.";
+    if (draft.bpm !== undefined && (draft.bpm < 1 || draft.bpm > 300)) errors.bpm = "Informe um BPM entre 1 e 300.";
     if (draft.sections.length === 0) {
-      errors["sections"] = "Adicione pelo menos uma seção.";
+      errors.sections = "Adicione pelo menos uma seção.";
     }
 
     draft.sections.forEach((section) => {
@@ -801,7 +808,7 @@ function EditorView({
 }: {
   song: Song;
   setSong: (song: Song | null) => void;
-  errors: Record<string, string>;
+  errors: DraftErrors;
   onSave: () => void;
   onCancel: () => void;
   onAddSection: () => void;
