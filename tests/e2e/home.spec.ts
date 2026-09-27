@@ -58,7 +58,7 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "Tocar" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
     await expect(page.getByText("Aguardando evento")).toBeVisible();
-    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible;
+    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible();
     await expect(page.getByRole("button", { name: "1. Introdução" })).toBeVisible();
     await expect(page.getByRole("button", { name: "2. Verso" })).toBeVisible();
     await expect(page.locator(".text-chord").filter({ hasText: "G" }).first()).toBeVisible();
