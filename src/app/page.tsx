@@ -893,7 +893,7 @@ function EditorView({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">{mode === "edit" ? "Editar música" : "Cadastrar música"}</h1>
           <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
-          {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null>
+          {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null}
         </div>
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onCancel}>Cancelar</button>
