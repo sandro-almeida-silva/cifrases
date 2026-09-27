@@ -57,33 +57,47 @@ test.describe("Cifrases", () => {
   });
 
 
-  test("keeps native selects readable and keyboard accessible", async ({ page }) => {
+  test("custom selects are readable and keyboard accessible", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("combobox", { name: "Filtrar por categoria" })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Ordenar músicas" })).toBeVisible();
+    const categorySelect = page.getByRole("button", { name: "Filtrar por categoria" });
+    const sortSelect = page.getByRole("button", { name: "Ordenar músicas" });
 
-    const selectStyle = await page.getByRole("combobox", { name: "Filtrar por categoria" }).evaluate((element) => {
-      const select = element as HTMLSelectElement;
-      const option = select.options[0];
-      const selectComputed = window.getComputedStyle(select);
-      const optionComputed = window.getComputedStyle(option);
+    await expect(categorySelect).toBeVisible();
+    await expect(sortSelect).toBeVisible();
 
+    const triggerStyles = await categorySelect.evaluate((element) => {
+      const computed = window.getComputedStyle(element);
       return {
-        selectColorScheme: selectComputed.colorScheme,
-        selectBackground: selectComputed.backgroundColor,
-        selectColor: selectComputed.color,
-        optionBackground: optionComputed.backgroundColor,
-        optionColor: optionComputed.color,
+        background: computed.backgroundColor,
+        color: computed.color,
       };
     });
 
-    expect(selectStyle.selectColorScheme).toContain("dark");
-    expect(selectStyle.selectBackground).not.toBe("rgb(255, 255, 255)");
-    expect(selectStyle.selectColor).not.toBe("rgb(255, 255, 255)");
-    expect(selectStyle.optionBackground).not.toBe("rgb(255, 255, 255)");
+    expect(triggerStyles.background).not.toBe("rgb(255, 255, 255)");
+    expect(triggerStyles.color).not.toBe("rgb(255, 255, 255)");
 
-    await page.getByRole("combobox", { name: "Filtrar por categoria" }).focus();
-    await expect(page.getByRole("combobox", { name: "Filtrar por categoria" })).toBeFocused();
+    await categorySelect.click();
+    const categoryListbox = page.getByRole("listbox", { name: "Filtrar por categoria" });
+    await expect(categoryListbox).toBeVisible();
+
+    const options = categoryListbox.getByRole("option");
+    await expect(options).toHaveCount(1);
+
+    const optionStyles = await options.first().evaluate((element) => {
+      const computed = window.getComputedStyle(element);
+      return {
+        background: computed.backgroundColor,
+        color: computed.color,
+      };
+    });
+
+    expect(optionStyles.background).not.toBe("rgb(255, 255, 255)");
+    expect(optionStyles.color).not.toBe("rgb(255, 255, 255)");
+
+    await categorySelect.press("ArrowDown");
+    await expect(categorySelect).toBeFocused();
+    await categorySelect.press("Enter");
+    await expect(categoryListbox).not.toBeVisible();
   });
 
   test("editor select has an accessible name and readable styles", async ({ page }, testInfo) => {
@@ -94,22 +108,30 @@ test.describe("Cifrases", () => {
     }
 
     await page.getByRole("button", { name: "Nova música" }).click();
-    const sectionSelect = page.getByRole("combobox", { name: "Tipo da seção 1" });
+    const sectionSelect = page.getByRole("button", { name: "Tipo da seção 1" });
 
     await expect(sectionSelect).toBeVisible();
-    await expect(sectionSelect).toHaveValue("verse");
+    await expect(sectionSelect).toHaveText("Verso");
 
-    const styles = await sectionSelect.evaluate((element) => {
+    await sectionSelect.click();
+    const listbox = page.getByRole("listbox", { name: "Tipo da seção 1" });
+    await expect(listbox).toBeVisible();
+    await expect(listbox.getByRole("option")).toHaveCount(7);
+
+    const optionStyles = await listbox.getByRole("option").first().evaluate((element) => {
       const computed = window.getComputedStyle(element);
       return {
-        colorScheme: computed.colorScheme,
         background: computed.backgroundColor,
         color: computed.color,
       };
     });
 
-    expect(styles.colorScheme).toContain("dark");
-    expect(styles.background).not.toBe("rgb(255, 255, 255)");
-    expect(styles.color).not.toBe("rgb(255, 255, 255)");
+    expect(optionStyles.background).not.toBe("rgb(255, 255, 255)");
+    expect(optionStyles.color).not.toBe("rgb(255, 255, 255)");
+
+    await sectionSelect.press("ArrowDown");
+    await sectionSelect.press("Enter");
+    await expect(sectionSelect).toHaveText("Pré-refrão");
   });
+
 });
