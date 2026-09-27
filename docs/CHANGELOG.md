@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.1...v1.0.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* disable Lightning CSS in builds ([d2e79ef](https://github.com/sandro-almeida-silva/cifrases/commit/d2e79ef40a25db3f1e3bbfb980b6c32f062d4235))
+* escape semantic-release message placeholders ([a16279e](https://github.com/sandro-almeida-silva/cifrases/commit/a16279e6e690c99c96d8a80bb0a3916e97b8c78e))
+* finalize Biome and release configuration ([233456f](https://github.com/sandro-almeida-silva/cifrases/commit/233456ffba25467617e7597b320fcd2f99b1e514))
+* finalize Biome and release configuration ([a238162](https://github.com/sandro-almeida-silva/cifrases/commit/a2381623b42ff48725a47e0de5ab62fbf70c396f))
+* finalize Biome and release configuration ([c876b4d](https://github.com/sandro-almeida-silva/cifrases/commit/c876b4db2658f2a960aaa48b7132acb24f2c38b0))
+* finalize Biome and release configuration ([cdd5965](https://github.com/sandro-almeida-silva/cifrases/commit/cdd59654caca61e4565e74b5e8c2e0251ce964f9))
+* preserve semantic-release placeholders ([b2b905d](https://github.com/sandro-almeida-silva/cifrases/commit/b2b905de93862fefa11ee83507e55aac9c274fb9))
+* restore semantic-release tag placeholder ([8682fc4](https://github.com/sandro-almeida-silva/cifrases/commit/8682fc40ab0af6d6b4ab3029a384e8b303c3293d))
+* stabilize Next CSS build configuration ([8bdc173](https://github.com/sandro-almeida-silva/cifrases/commit/8bdc17320663af9cc3756270b4f73a04ec3adb8c))
+* type homepage feature icons explicitly ([35389c0](https://github.com/sandro-almeida-silva/cifrases/commit/35389c0760e76e456cb305ecf46b5a376a1d329f))
+* use literal semantic-release tag format ([5eceff8](https://github.com/sandro-almeida-silva/cifrases/commit/5eceff8efe59978221d62e6a1b72cee7d4c8a85c))
+* use valid Biome recommended configuration ([751e724](https://github.com/sandro-almeida-silva/cifrases/commit/751e7247582600167e054199558b2231c55d5bc5))
+
 ## [1.0.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.0...v1.0.1) (2026-09-27)
 
 
