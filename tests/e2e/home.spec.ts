@@ -55,7 +55,7 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     await expect(page.getByText("Primeira Canção")).toBeVisible();
   });
-});
+
 
   test("keeps native selects readable and keyboard accessible", async ({ page }) => {
     await page.goto("/");
