@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.1...v1.2.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* **a11y:** remove unsupported aria-activedescendant from button ([41242e3](https://github.com/sandro-almeida-silva/cifrases/commit/41242e34a43576cc1bdcefd82d58d8d26b77c8f2))
+* **accessibility:** add custom theme-safe select ([ce8f479](https://github.com/sandro-almeida-silva/cifrases/commit/ce8f4798d8b630a168c1e943d5465c6d3486217d))
+* **accessibility:** replace native selects with custom control ([29cdefd](https://github.com/sandro-almeida-silva/cifrases/commit/29cdefd15290c9ef0f1af75c7cb8de3a158b5e35))
+* **lint:** simplify theme dataset access ([094adb3](https://github.com/sandro-almeida-silva/cifrases/commit/094adb3ab737f22a10ace064074c9cf8187bb428))
+* **typecheck:** set theme attribute without index signature access ([0220c6e](https://github.com/sandro-almeida-silva/cifrases/commit/0220c6e42b59217bf3ef7ea58f3acd3f69ed7ace))
+
 ## [1.2.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.0...v1.2.1) (2026-09-27)
 
 
