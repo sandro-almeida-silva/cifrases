@@ -1246,7 +1246,7 @@ function PlayerView({
       ) : null}
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
-        <div className="flex min-w-max gap-2" aria-label="Navegação entre seções">
+        <nav className="flex min-w-max gap-2" aria-label="Navegação entre seções">
           {song.sections.map((section, index) => (
             <button
               key={section.id}
