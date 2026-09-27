@@ -7,6 +7,13 @@ const seededSong = {
   artist: "Cifrases",
   key: "G",
   media: { audioUrl: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" },
+  timeline: {
+    events: [
+      { atMs: 1000, sectionId: "section-intro", lineId: "line-intro" },
+      { atMs: 3000, sectionId: "section-verse", lineId: "line-verse-1", beat: 1, measure: 1 },
+      { atMs: 5000, sectionId: "section-chorus", lineId: "line-chorus" },
+    ],
+  },
   sections: [
     {
       id: "section-intro",
@@ -50,7 +57,8 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Detalhes da música")).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
-    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible();
+    await expect(page.getByText("Aguardando evento")).toBeVisible();
+    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible;
     await expect(page.getByRole("button", { name: "1. Introdução" })).toBeVisible();
     await expect(page.getByRole("button", { name: "2. Verso" })).toBeVisible();
     await expect(page.locator(".text-chord").filter({ hasText: "G" }).first()).toBeVisible();
