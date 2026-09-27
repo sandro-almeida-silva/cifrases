@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.12.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.11.0...v1.12.0) (2026-09-27)
+
+
+### Features
+
+* **player:** add audio playback controls ([dacdd4f](https://github.com/sandro-almeida-silva/cifrases/commit/dacdd4f853f73f7d7a170ba4d1517844d16ce764))
+
 # [1.11.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.10.0...v1.11.0) (2026-09-27)
 
 
