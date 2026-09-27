@@ -640,7 +640,17 @@ export default function HomePage() {
           onPreferences={updatePlayerPreferences}
           onResetPreferences={resetPlayerPreferences}
           onToggleAudio={toggleAudio}
-          onTime={(seconds) => setCurrentSecond(seconds)}
+          onTime={handleAudioTime}
+          audioDuration={audioDuration}
+          audioVolume={audioVolume}
+          audioPlaybackRate={audioPlaybackRate}
+          audioError={audioError}
+          onAudioLoaded={handleAudioLoaded}
+          onAudioError={() => { setAudioError(true); setPlaying(false); }}
+          onSeek={seekAudio}
+          onVolume={setAudioVolumeValue}
+          onPlaybackRate={setAudioPlaybackRateValue}
+          onResetAudioPosition={resetAudioSessionPosition}
           favorite={song ? library.favorites.includes(song.id) : false}
           onFavorite={() => song && toggleFavorite(song.id)}
         />
