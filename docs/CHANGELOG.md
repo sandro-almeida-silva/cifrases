@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.5...v1.0.6) (2026-09-27)
+
+
+### Bug Fixes
+
+* configure Biome suspicious rules correctly ([ba75b84](https://github.com/sandro-almeida-silva/cifrases/commit/ba75b849f40ce92c3d8cc217fb556d2bf2495f30))
+
 ## [1.0.5](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.4...v1.0.5) (2026-09-27)
 
 
