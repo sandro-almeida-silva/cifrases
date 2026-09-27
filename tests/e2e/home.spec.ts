@@ -47,7 +47,7 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "Abrir Primeira Canção (cópia)" }).click();
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Excluir" }).click();
-    await expect(page.getByText("Primeira Canção (cópia)")).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Primeira Canção (cópia)" })).not.toBeVisible();
   });
 
   test("desktop sidebar starts collapsed and can expand", async ({ page }, testInfo) => {
@@ -92,7 +92,7 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("heading", { name: "Canção Completa" })).toBeVisible();
 
     await page.getByRole("button", { name: "Biblioteca" }).last().click();
-    await expect(page.getByText("Canção Completa")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Canção Completa" })).toBeVisible();
 
     const saved = await page.evaluate(() => {
       const raw = localStorage.getItem("cifrases:songs:v1");
