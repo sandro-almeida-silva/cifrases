@@ -45,7 +45,9 @@ export function transposeChord(chord: string, semitones: number): string {
   const bassMatch = suffix.match(/^(.*\/)([A-Ga-g](?:#|b)?)$/);
   if (!bassMatch) return `${transposedRoot}${suffix}`;
 
-  const transposedBass = transposeNote(bassMatch[2], semitones);
+  const bass = bassMatch[2];
+  if (!bass) return `${transposedRoot}${suffix}`;
+  const transposedBass = transposeNote(bass, semitones);
   if (!transposedBass) return `${transposedRoot}${suffix}`;
 
   return `${transposedRoot}${bassMatch[1]}${transposedBass}`;
