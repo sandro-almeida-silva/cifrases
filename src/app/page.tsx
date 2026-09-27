@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   AudioLines,
@@ -5,7 +6,6 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
 export default function HomePage() {
