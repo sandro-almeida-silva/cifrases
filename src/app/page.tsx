@@ -1310,6 +1310,14 @@ function PlayerView({
     return () => document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
 
+  useEffect(() => {
+    if (!activeLineId || !playing || !preferences.autoScroll || autoScrollPaused) return;
+    document.querySelector<HTMLElement>(`[data-player-line-id="${activeLineId}"]`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [activeLineId, autoScrollPaused, playing, preferences.autoScroll]);
+
   if (!song) return <Empty />;
 
   const maxWidthClass = {
@@ -1432,11 +1440,6 @@ function PlayerView({
                 <div
                   key={item.id}
                   data-player-line-id={item.id}
-                  ref={(element) => {
-                    if (activeLineId === item.id && playing && preferences.autoScroll && !autoScrollPaused && element) {
-                      element.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }
-                  }}
                   className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""} ${preferences.highContrast ? "border border-white/20" : ""}`}
                 >
                   <div className="relative min-h-7 font-mono text-sm">
