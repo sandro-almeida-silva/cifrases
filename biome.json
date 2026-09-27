@@ -32,7 +32,9 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "suspicious/noTemplateCurlyInString": "off"
+      "suspicious": {
+        "noTemplateCurlyInString": "off"
+      }
     }
   }
 }
