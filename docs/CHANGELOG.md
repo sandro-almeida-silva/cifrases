@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.8.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.7.0...v1.8.0) (2026-09-27)
+
+
+### Features
+
+* **detail:** add song preparation screen ([8cdfaa9](https://github.com/sandro-almeida-silva/cifrases/commit/8cdfaa95ff54e4b8c6f37d85cbffd9eed3e8bfcf))
+
 # [1.7.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.6.0...v1.7.0) (2026-09-27)
 
 
