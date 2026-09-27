@@ -31,6 +31,8 @@
   },
   "linter": {
     "enabled": true,
-    "rules": {}
+    "rules": {
+      "suspicious/noTemplateCurlyInString": "off"
+    }
   }
 }
