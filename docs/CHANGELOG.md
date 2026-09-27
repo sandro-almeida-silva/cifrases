@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.5.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.4.0...v1.5.0) (2026-09-27)
+
+
+### Features
+
+* **library:** list and open persisted songs ([a704e60](https://github.com/sandro-almeida-silva/cifrases/commit/a704e60fdfe922b9bff2ba927da5051f82484fcc))
+
 # [1.4.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.3.0...v1.4.0) (2026-09-27)
 
 
