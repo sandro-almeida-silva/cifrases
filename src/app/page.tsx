@@ -163,8 +163,9 @@ export default function HomePage() {
   }, [songs]);
 
   useEffect(() => {
+    if (libraryStatus !== "ready") return;
     saveLibraryState({ ...library, theme, playerPreferences });
-  }, [library, theme, playerPreferences]);
+  }, [library, theme, playerPreferences, libraryStatus]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
