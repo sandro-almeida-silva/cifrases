@@ -30,6 +30,7 @@ import { Select } from "@/components/ui/select";
 import {
   cloneSong,
   createSongId,
+  defaultPlayerPreferences,
   loadLibraryState,
   loadSongs,
   resolveMediaUrl,
@@ -115,6 +116,7 @@ export default function HomePage() {
     recent: [],
     playlists: [],
     theme: "gold",
+    playerPreferences: defaultPlayerPreferences,
   });
 
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
@@ -128,8 +130,7 @@ export default function HomePage() {
   const [sort, setSort] = useState<SortMode>("title");
   const [category, setCategory] = useState("all");
   const [transpose, setTranspose] = useState(0);
-  const [fontScale, setFontScale] = useState(1);
-  const [autoScroll, setAutoScroll] = useState(true);
+  const [playerPreferences, setPlayerPreferences] = useState(defaultPlayerPreferences);
   const [playing, setPlaying] = useState(false);
   const [currentSecond, setCurrentSecond] = useState(0);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
@@ -148,6 +149,7 @@ export default function HomePage() {
       setSongs(stored);
       setLibrary(storedLibrary);
       setTheme(storedLibrary.theme);
+      setPlayerPreferences(storedLibrary.playerPreferences);
       setLibraryStatus("ready");
     } catch {
       setSongs([]);
@@ -161,8 +163,9 @@ export default function HomePage() {
   }, [songs]);
 
   useEffect(() => {
-    saveLibraryState({ ...library, theme });
-  }, [library, theme]);
+    if (libraryStatus !== "ready") return;
+    saveLibraryState({ ...library, theme, playerPreferences });
+  }, [library, theme, playerPreferences, libraryStatus]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -497,6 +500,14 @@ export default function HomePage() {
     URL.revokeObjectURL(url);
   }
 
+  function updatePlayerPreferences(patch: Partial<typeof defaultPlayerPreferences>) {
+    setPlayerPreferences((current) => ({ ...current, ...patch }));
+  }
+
+  function resetPlayerPreferences() {
+    setPlayerPreferences(defaultPlayerPreferences);
+  }
+
   function toggleAudio() {
     const audio = audioRef.current;
     if (!audio || !song?.media?.audioUrl) return;
@@ -568,17 +579,16 @@ export default function HomePage() {
         <PlayerView
           song={song}
           transpose={transpose}
-          fontScale={fontScale}
+          preferences={playerPreferences}
           activeLineId={activeLineId}
-          autoScroll={autoScroll}
           currentSecond={currentSecond}
           playing={playing}
           audioRef={audioRef}
           onBack={() => setView("detail")}
           onEdit={() => song && startEdit(song)}
           onTranspose={setTranspose}
-          onFontScale={setFontScale}
-          onAutoScroll={() => setAutoScroll((value) => !value)}
+          onPreferences={updatePlayerPreferences}
+          onResetPreferences={resetPlayerPreferences}
           onToggleAudio={toggleAudio}
           onTime={(seconds) => setCurrentSecond(seconds)}
           favorite={song ? library.favorites.includes(song.id) : false}
@@ -1172,17 +1182,16 @@ function ResourceCard({ label, available, detail }: { label: string; available: 
 function PlayerView({
   song,
   transpose,
-  fontScale,
+  preferences,
   activeLineId,
-  autoScroll,
   currentSecond,
   playing,
   audioRef,
   onBack,
   onEdit,
   onTranspose,
-  onFontScale,
-  onAutoScroll,
+  onPreferences,
+  onResetPreferences,
   onToggleAudio,
   onTime,
   favorite,
@@ -1190,23 +1199,44 @@ function PlayerView({
 }: {
   song: Song | null;
   transpose: number;
-  fontScale: number;
+  preferences: typeof defaultPlayerPreferences;
   activeLineId: string | null;
-  autoScroll: boolean;
   currentSecond: number;
   playing: boolean;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   onBack: () => void;
   onEdit: () => void;
   onTranspose: (value: number) => void;
-  onFontScale: (value: number) => void;
-  onAutoScroll: () => void;
+  onPreferences: (patch: Partial<typeof defaultPlayerPreferences>) => void;
+  onResetPreferences: () => void;
   onToggleAudio: () => void;
   onTime: (seconds: number) => void;
   favorite: boolean;
   onFavorite: () => void;
 }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
   if (!song) return <Empty />;
+
+  const maxWidthClass = {
+    narrow: "max-w-2xl",
+    comfortable: "max-w-4xl",
+    wide: "max-w-6xl",
+  }[preferences.maxWidth];
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement.requestFullscreen();
+    }
+  }
 
   return (
     <section>
@@ -1222,7 +1252,7 @@ function PlayerView({
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onFavorite} aria-label="Favoritar"><Heart size={16} fill={favorite ? "currentColor" : "none"} /></button>
           <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onEdit} aria-label="Editar"><Pencil size={16} /></button>
-          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onAutoScroll}>Auto-scroll {autoScroll ? "on" : "off"}</button>
+          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ autoScroll: !preferences.autoScroll })}>Auto-scroll {preferences.autoScroll ? "on" : "off"}</button>
         </div>
       </div>
 
@@ -1230,8 +1260,14 @@ function PlayerView({
         <button type="button" className="rounded-xl bg-brand px-3 py-2 text-sm" onClick={() => onTranspose(transpose + 1)}>+ ½</button>
         <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onTranspose(0)}>Original</button>
         <button type="button" className="rounded-xl bg-brand px-3 py-2 text-sm" onClick={() => onTranspose(transpose - 1)}>− ½</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onFontScale(Math.max(0.8, fontScale - 0.1))}>A−</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onFontScale(Math.min(1.6, fontScale + 0.1))}>A+</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ fontScale: Math.max(0.8, preferences.fontScale - 0.1) })}>A−</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ fontScale: Math.min(1.6, preferences.fontScale + 0.1) })}>A+</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ lineSpacing: Math.max(1.2, preferences.lineSpacing - 0.15) })}>Espaço −</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ lineSpacing: Math.min(2.4, preferences.lineSpacing + 0.15) })}>Espaço +</button>
+        <button type="button" className={`rounded-xl border px-3 py-2 text-sm ${preferences.highContrast ? "border-brand bg-brand/10" : "border-white/10"}`} onClick={() => onPreferences({ highContrast: !preferences.highContrast })} aria-pressed={preferences.highContrast}>Alto contraste</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ maxWidth: preferences.maxWidth === "narrow" ? "comfortable" : preferences.maxWidth === "comfortable" ? "wide" : "narrow" })}>Largura</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={toggleFullscreen} aria-label={isFullscreen ? "Sair da tela cheia" : "Entrar em tela cheia"}>{isFullscreen ? "Sair tela cheia" : "Tela cheia"}</button>
+        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onResetPreferences}>Restaurar padrão</button>
         <span className="ml-auto text-xs text-muted">{Math.floor(currentSecond / 60).toString().padStart(2, "0")}:{Math.floor(currentSecond % 60).toString().padStart(2, "0")}</span>
       </div>
 
@@ -1260,7 +1296,7 @@ function PlayerView({
         </nav>
       </div>
 
-      <div className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-surface p-5 sm:p-8" style={{ fontSize: `${fontScale}rem` }}>
+      <div className={`mx-auto mt-6 w-full ${maxWidthClass} space-y-8 rounded-3xl border p-5 sm:p-8 ${preferences.highContrast ? "border-white/40 bg-black text-white" : "border-white/10 bg-surface"}`} style={{ fontSize: `${preferences.fontScale}rem` }}>
         {song.sections.map((section) => (
           <section key={section.id} id={`player-section-${section.id}`}>
             <div className="mb-4 flex items-center gap-3">
@@ -1270,13 +1306,13 @@ function PlayerView({
             </div>
             <div className="space-y-4">
               {section.lines.map((item) => (
-                <div key={item.id} className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""}`}>
+                <div key={item.id} className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""} ${preferences.highContrast ? "border border-white/20" : ""}`}>
                   <div className="relative min-h-7 font-mono text-sm">
                     {(item.chords ?? []).map((chord) => (
-                      <span key={`${item.id}-${chord.position}-${chord.chord}`} className="absolute top-0 font-semibold text-chord" style={{ left: `${chord.position}ch` }}>{transposeChord(chord.chord, transpose)}</span>
+                      <span key={`${item.id}-${chord.position}-${chord.chord}`} className={`absolute top-0 font-semibold text-chord ${preferences.highContrast ? "underline decoration-2 underline-offset-4" : ""}`} style={{ left: `${chord.position}ch` }}>{transposeChord(chord.chord, transpose)}</span>
                     ))}
                   </div>
-                  <p className="whitespace-pre-wrap font-medium leading-8">{item.text || " "}</p>
+                  <p className="whitespace-pre-wrap font-medium" style={{ lineHeight: preferences.lineSpacing }}>{item.text || " "}</p>
                 </div>
               ))}
             </div>

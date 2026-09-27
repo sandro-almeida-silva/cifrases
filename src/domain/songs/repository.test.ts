@@ -35,6 +35,13 @@ describe("song repository serialization", () => {
       recent: [],
       playlists: [],
       theme: "purple",
+      playerPreferences: {
+        fontScale: 1,
+        lineSpacing: 1.75,
+        maxWidth: "comfortable",
+        highContrast: false,
+        autoScroll: true,
+      },
     });
   });
 });

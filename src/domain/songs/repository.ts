@@ -4,6 +4,22 @@ export const SONGS_STORAGE_KEY = "cifrases:songs:v1";
 export const LIBRARY_STORAGE_KEY = "cifrases:library:v1";
 export const MEDIA_STORAGE_PREFIX = "cifrases:media:v1";
 
+export type PlayerPreferences = {
+  fontScale: number;
+  lineSpacing: number;
+  maxWidth: "narrow" | "comfortable" | "wide";
+  highContrast: boolean;
+  autoScroll: boolean;
+};
+
+export const defaultPlayerPreferences: PlayerPreferences = {
+  fontScale: 1,
+  lineSpacing: 1.75,
+  maxWidth: "comfortable",
+  highContrast: false,
+  autoScroll: true,
+};
+
 export type LibraryState = {
   favorites: string[];
   recent: string[];
@@ -13,6 +29,7 @@ export type LibraryState = {
     songIds: string[];
   }>;
   theme: "purple" | "gold" | "blue";
+  playerPreferences: PlayerPreferences;
 };
 
 const defaultLibraryState: LibraryState = {
@@ -20,6 +37,7 @@ const defaultLibraryState: LibraryState = {
   recent: [],
   playlists: [],
   theme: "gold",
+  playerPreferences: defaultPlayerPreferences,
 };
 
 export function parseSongs(value: string | null): Song[] {
@@ -42,6 +60,14 @@ export function parseLibraryState(value: string | null): LibraryState {
     const parsed: unknown = JSON.parse(value);
     if (!parsed || typeof parsed !== "object") return defaultLibraryState;
     const candidate = parsed as Partial<LibraryState>;
+    const player = candidate.playerPreferences;
+    const playerPreferences: PlayerPreferences = {
+      fontScale: typeof player?.fontScale === "number" ? Math.min(1.6, Math.max(0.8, player.fontScale)) : defaultPlayerPreferences.fontScale,
+      lineSpacing: typeof player?.lineSpacing === "number" ? Math.min(2.4, Math.max(1.2, player.lineSpacing)) : defaultPlayerPreferences.lineSpacing,
+      maxWidth: player?.maxWidth === "narrow" || player?.maxWidth === "wide" ? player.maxWidth : defaultPlayerPreferences.maxWidth,
+      highContrast: player?.highContrast === true,
+      autoScroll: player?.autoScroll !== false,
+    };
     return {
       favorites: Array.isArray(candidate.favorites)
         ? candidate.favorites.filter((item): item is string => typeof item === "string")
@@ -65,6 +91,7 @@ export function parseLibraryState(value: string | null): LibraryState {
         candidate.theme === "gold" || candidate.theme === "blue"
           ? candidate.theme
           : "purple",
+      playerPreferences,
     };
   } catch {
     return defaultLibraryState;
