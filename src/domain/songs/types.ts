@@ -25,10 +25,20 @@ export type SongSection = {
   lines: SongLine[];
 };
 
+export type SongMediaKind = "audio" | "cover" | "original";
+
+export type SongMediaRef = {
+  id: string;
+  kind: SongMediaKind;
+  path: string;
+  mimeType: string;
+  size: number;
+};
+
 export type SongMedia = {
-  audioUrl?: string;
-  coverUrl?: string;
-  originalImageUrl?: string;
+  audio?: SongMediaRef;
+  cover?: SongMediaRef;
+  original?: SongMediaRef;
 };
 
 export type SongTimelineEvent = {
