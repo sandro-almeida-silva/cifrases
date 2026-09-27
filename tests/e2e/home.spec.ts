@@ -27,6 +27,12 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Detalhes da música")).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
+    await expect(page.getByText("A música começa quando o tempo encontra a letra.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "1. Introdução" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "2. Verso" })).toBeVisible();
+    await expect(page.locator(".text-chord").filter({ hasText: "G" }).first()).toBeVisible();
+    await page.getByRole("button", { name: "2. Verso" }).click();
+    await expect(page.getByText("Cada acorde abre espaço para a próxima frase.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Biblioteca" }).last()).toBeVisible();
   });
 
