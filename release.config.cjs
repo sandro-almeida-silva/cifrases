@@ -1,6 +1,6 @@
 module.exports = {
   branches: ["main"],
-  tagFormat: "v\${version}",
+  tagFormat: "v${version}",
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -15,7 +15,8 @@ module.exports = {
       "@semantic-release/git",
       {
         assets: ["docs/CHANGELOG.md"],
-        message: "chore(release): \\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}",
+        message:
+          "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
     ],
     "@semantic-release/github",
