@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.7.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.6.0...v1.7.0) (2026-09-27)
+
+
+### Features
+
+* **editor:** protect and persist song edits ([799a4b7](https://github.com/sandro-almeida-silva/cifrases/commit/799a4b719d14ef5cf6d6a94c913a817f0416acb3))
+
 # [1.6.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.5.0...v1.6.0) (2026-09-27)
 
 
