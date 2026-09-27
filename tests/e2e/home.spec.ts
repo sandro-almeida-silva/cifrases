@@ -1,6 +1,22 @@
 import { expect, test } from "@playwright/test";
 
+const seededSong = {
+  id: "e2e-song",
+  slug: "primeira-cancao",
+  title: "Primeira Canção",
+  artist: "Cifrases",
+  key: "G",
+  category: "Louvor",
+  sections: [{ id: "section-1", type: "verse", label: "Verso", lines: [{ id: "line-1", text: "Primeira linha" }] }],
+};
+
 test.describe("Cifrases", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript((song) => {
+      localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+    }, seededSong);
+  });
+
   test("opens the library and player", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
@@ -48,6 +64,13 @@ test.describe("Cifrases", () => {
       return songs.find((song: { title?: string }) => song.title === "Canção Dourada")?.slug;
     });
     expect(savedSlug).toBe("cancao-dourada");
+  });
+
+  test("shows an actionable empty state", async ({ page }) => {
+    await page.addInitScript(() => localStorage.removeItem("cifrases:songs:v1"));
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Sua biblioteca está vazia" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cadastrar primeira música" })).toBeVisible();
   });
 
   test("keeps the primary flow usable on mobile", async ({ page }) => {
