@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.8](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.7...v1.0.8) (2026-09-27)
+
+
+### Bug Fixes
+
+* disable E2E package manager cache without lockfile ([63f014f](https://github.com/sandro-almeida-silva/cifrases/commit/63f014fd0ad8b96d18babbf22a7c3807f7d83981))
+
 ## [1.0.7](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.6...v1.0.7) (2026-09-27)
 
 
