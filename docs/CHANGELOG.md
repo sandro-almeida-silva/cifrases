@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.1...v1.1.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* **vercel:** keep deployment config minimal ([6ea0671](https://github.com/sandro-almeida-silva/cifrases/commit/6ea0671d4694b68752f5e91225883ad4124be67e))
+
 ## [1.1.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.0...v1.1.1) (2026-09-27)
 
 
