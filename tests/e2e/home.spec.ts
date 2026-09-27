@@ -6,6 +6,7 @@ const seededSong = {
   title: "Primeira Canção",
   artist: "Cifrases",
   key: "G",
+  media: { audioUrl: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" },
   sections: [
     {
       id: "section-intro",
@@ -98,6 +99,34 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "Restaurar padrão" }).click();
     await expect(page.getByRole("button", { name: "Alto contraste" })).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("button", { name: "Tela cheia" })).toBeVisible();
+  });
+
+  test("controls audio playback without mutating the song", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Tocar" }).click();
+
+    await expect(page.getByRole("button", { name: "Tocar áudio" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Progresso do áudio" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Silenciar áudio" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Velocidade de reprodução" })).toBeVisible();
+
+    await page.getByRole("combobox", { name: "Velocidade de reprodução" }).selectOption("1.5");
+    await page.getByRole("button", { name: "Silenciar áudio" }).click();
+    await expect(page.getByRole("button", { name: "Ativar som" })).toBeVisible();
+    await page.getByRole("button", { name: "Recomeçar" }).click();
+
+    const persisted = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      const songs = raw ? JSON.parse(raw) : [];
+      return songs[0]?.media?.audioUrl;
+    });
+    expect(persisted).toContain("data:audio/wav");
   });
 
   test("duplicates and deletes a song from details", async ({ page }, testInfo) => {

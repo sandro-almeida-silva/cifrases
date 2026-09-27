@@ -21,6 +21,8 @@ import {
   Settings2,
   Trash2,
   Upload,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -133,6 +135,10 @@ export default function HomePage() {
   const [playerPreferences, setPlayerPreferences] = useState(defaultPlayerPreferences);
   const [playing, setPlaying] = useState(false);
   const [currentSecond, setCurrentSecond] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioVolume, setAudioVolume] = useState(1);
+  const [audioPlaybackRate, setAudioPlaybackRate] = useState(1);
+  const [audioError, setAudioError] = useState(false);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [presentationSection, setPresentationSection] = useState(0);
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
@@ -512,12 +518,56 @@ export default function HomePage() {
     const audio = audioRef.current;
     if (!audio || !song?.media?.audioUrl) return;
     if (audio.paused) {
-      void audio.play();
-      setPlaying(true);
+      void audio.play().then(() => setPlaying(true)).catch(() => setAudioError(true));
     } else {
       audio.pause();
       setPlaying(false);
     }
+  }
+
+  function handleAudioLoaded() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setAudioError(false);
+    setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    audio.volume = audioVolume;
+    audio.playbackRate = audioPlaybackRate;
+    const stored = Number(window.sessionStorage.getItem(`cifrases:audio-position:${audio.getAttribute("data-song-id")}`) ?? 0);
+    if (stored > 0 && stored < audio.duration) {
+      audio.currentTime = stored;
+      setCurrentSecond(stored);
+    }
+  }
+
+  function handleAudioTime(seconds: number) {
+    setCurrentSecond(seconds);
+    const songId = audioRef.current?.getAttribute("data-song-id");
+    if (songId) window.sessionStorage.setItem(`cifrases:audio-position:${songId}`, String(seconds));
+  }
+
+  function seekAudio(seconds: number) {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration)) return;
+    audio.currentTime = Math.min(audio.duration, Math.max(0, seconds));
+    setCurrentSecond(audio.currentTime);
+  }
+
+  function setAudioVolumeValue(value: number) {
+    const audio = audioRef.current;
+    if (audio) audio.volume = value;
+    setAudioVolume(value);
+  }
+
+  function setAudioPlaybackRateValue(value: number) {
+    const audio = audioRef.current;
+    if (audio) audio.playbackRate = value;
+    setAudioPlaybackRate(value);
+  }
+
+  function resetAudioSessionPosition() {
+    const songId = audioRef.current?.getAttribute("data-song-id");
+    if (songId) window.sessionStorage.removeItem(`cifrases:audio-position:${songId}`);
+    seekAudio(0);
   }
 
   const content = (
@@ -590,7 +640,18 @@ export default function HomePage() {
           onPreferences={updatePlayerPreferences}
           onResetPreferences={resetPlayerPreferences}
           onToggleAudio={toggleAudio}
-          onTime={(seconds) => setCurrentSecond(seconds)}
+          onTime={handleAudioTime}
+          audioDuration={audioDuration}
+          audioVolume={audioVolume}
+          audioPlaybackRate={audioPlaybackRate}
+          audioError={audioError}
+          onAudioLoaded={handleAudioLoaded}
+          onAudioError={() => { setAudioError(true); setPlaying(false); }}
+          onAudioEnded={() => setPlaying(false)}
+          onSeek={seekAudio}
+          onVolume={setAudioVolumeValue}
+          onPlaybackRate={setAudioPlaybackRateValue}
+          onResetAudioPosition={resetAudioSessionPosition}
           favorite={song ? library.favorites.includes(song.id) : false}
           onFavorite={() => song && toggleFavorite(song.id)}
         />
@@ -1194,6 +1255,17 @@ function PlayerView({
   onResetPreferences,
   onToggleAudio,
   onTime,
+  audioDuration,
+  audioVolume,
+  audioPlaybackRate,
+  audioError,
+  onAudioLoaded,
+  onAudioError,
+  onAudioEnded,
+  onSeek,
+  onVolume,
+  onPlaybackRate,
+  onResetAudioPosition,
   favorite,
   onFavorite,
 }: {
@@ -1211,6 +1283,17 @@ function PlayerView({
   onResetPreferences: () => void;
   onToggleAudio: () => void;
   onTime: (seconds: number) => void;
+  audioDuration: number;
+  audioVolume: number;
+  audioPlaybackRate: number;
+  audioError: boolean;
+  onAudioLoaded: () => void;
+  onAudioError: () => void;
+  onAudioEnded: () => void;
+  onSeek: (seconds: number) => void;
+  onVolume: (value: number) => void;
+  onPlaybackRate: (value: number) => void;
+  onResetAudioPosition: () => void;
   favorite: boolean;
   onFavorite: () => void;
 }) {
@@ -1272,12 +1355,34 @@ function PlayerView({
       </div>
 
       {song.media?.audioUrl ? (
-        <div className="mt-3 rounded-2xl border border-white/10 bg-surface p-3">
+        <div className="mt-3 rounded-2xl border border-white/10 bg-surface p-3 sm:p-4">
           {/* biome-ignore lint/a11y/useMediaCaption: music practice audio does not contain spoken dialogue. */}
-          <audio ref={audioRef} className="hidden" src={song.media.audioUrl} onTimeUpdate={(event) => onTime(event.currentTarget.currentTime)} onEnded={() => onTime(0)} />
-          <button type="button" className="grid size-11 place-items-center rounded-xl bg-brand text-white" onClick={onToggleAudio} aria-label={playing ? "Pausar áudio" : "Tocar áudio"}>
-            {playing ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}
-          </button>
+          <audio
+            ref={audioRef}
+            data-song-id={song.id}
+            className="hidden"
+            src={song.media.audioUrl}
+            preload="metadata"
+            onLoadedMetadata={onAudioLoaded}
+            onTimeUpdate={(event) => onTime(event.currentTarget.currentTime)}
+            onEnded={() => { onTime(0); onResetAudioPosition(); onAudioEnded(); }}
+            onError={onAudioError}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand text-white" onClick={onToggleAudio} aria-label={playing ? "Pausar áudio" : "Tocar áudio"}>
+              {playing ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}
+            </button>
+            <span className="min-w-24 text-xs font-mono text-muted">{formatTime(currentSecond)} / {formatTime(audioDuration)}</span>
+            <input className="min-w-40 flex-1" type="range" min="0" max={Math.max(audioDuration, 0)} step="0.1" value={Math.min(currentSecond, audioDuration || 0)} onChange={(event) => onSeek(Number(event.target.value))} aria-label="Progresso do áudio" disabled={!audioDuration} />
+            <button type="button" className="rounded-xl border border-white/10 p-2" onClick={() => onVolume(audioVolume > 0 ? 0 : 1)} aria-label={audioVolume > 0 ? "Silenciar áudio" : "Ativar som"}>
+              {audioVolume > 0 ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+            <select className="rounded-xl border border-white/10 bg-transparent px-2 py-2 text-xs" value={audioPlaybackRate} onChange={(event) => onPlaybackRate(Number(event.target.value))} aria-label="Velocidade de reprodução">
+              {[0.75, 1, 1.25, 1.5, 2].map((rate) => <option key={rate} value={rate}>{rate}x</option>)}
+            </select>
+            <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-xs" onClick={onResetAudioPosition}>Recomeçar</button>
+          </div>
+          {audioError ? <p role="alert" className="mt-3 text-xs text-red-300">Não foi possível reproduzir este áudio. Verifique o arquivo e tente novamente.</p> : null}
         </div>
       ) : null}
 
@@ -1321,6 +1426,11 @@ function PlayerView({
       </div>
     </section>
   );
+}
+
+function formatTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
+  return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
 }
 
 function PresentationView({ song, index, onIndex, onBack }: { song: Song | null; index: number; onIndex: (value: number) => void; onBack: () => void }) {
