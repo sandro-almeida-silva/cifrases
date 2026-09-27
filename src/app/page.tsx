@@ -41,6 +41,7 @@ import {
   slugify,
   type LibraryState,
 } from "@/domain/songs/repository";
+import { resolveTimelineEvent } from "@/domain/songs/timeline";
 import { transposeChord, transposeKey } from "@/domain/songs/transpose";
 import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType } from "@/domain/songs/types";
 
@@ -140,6 +141,8 @@ export default function HomePage() {
   const [audioPlaybackRate, setAudioPlaybackRate] = useState(1);
   const [audioError, setAudioError] = useState(false);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [timelineSynced, setTimelineSynced] = useState(false);
   const [presentationSection, setPresentationSection] = useState(0);
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -212,6 +215,13 @@ export default function HomePage() {
     new Set(songs.map((item) => item.category).filter((value): value is string => Boolean(value))),
   ).sort();
 
+  function syncTimeline(seconds: number) {
+    const result = resolveTimelineEvent(song?.timeline?.events ?? [], seconds);
+    setActiveLineId(result.event?.lineId ?? null);
+    setActiveSectionId(result.event?.sectionId ?? null);
+    setTimelineSynced(result.synced);
+  }
+
   useEffect(() => {
     if (!playing || !audioRef.current || !song?.timeline?.events.length) return undefined;
 
@@ -219,15 +229,13 @@ export default function HomePage() {
       const audio = audioRef.current;
       if (!audio) return;
       setCurrentSecond(audio.currentTime);
-      const current = [...(song.timeline?.events ?? [])]
-        .sort((a, b) => a.atMs - b.atMs)
-        .filter((event) => event.atMs / 1000 <= audio.currentTime)
-        .at(-1);
-      setActiveLineId(current?.lineId ?? null);
+      syncTimeline(audio.currentTime);
     }, 120);
 
     return () => window.clearInterval(timer);
   }, [playing, song]);
+
+
 
   function openSong(id: string) {
     setMobileMenu(false);
@@ -235,6 +243,8 @@ export default function HomePage() {
     setTranspose(0);
     setCurrentSecond(0);
     setActiveLineId(null);
+    setActiveSectionId(null);
+    setTimelineSynced(false);
     setPresentationSection(0);
     setLibrary((state) => ({
       ...state,
@@ -541,6 +551,7 @@ export default function HomePage() {
 
   function handleAudioTime(seconds: number) {
     setCurrentSecond(seconds);
+    syncTimeline(seconds);
     const songId = audioRef.current?.getAttribute("data-song-id");
     if (songId) window.sessionStorage.setItem(`cifrases:audio-position:${songId}`, String(seconds));
   }
@@ -631,6 +642,8 @@ export default function HomePage() {
           transpose={transpose}
           preferences={playerPreferences}
           activeLineId={activeLineId}
+          activeSectionId={activeSectionId}
+          timelineSynced={timelineSynced}
           currentSecond={currentSecond}
           playing={playing}
           audioRef={audioRef}
@@ -1245,6 +1258,8 @@ function PlayerView({
   transpose,
   preferences,
   activeLineId,
+  activeSectionId,
+  timelineSynced,
   currentSecond,
   playing,
   audioRef,
@@ -1273,6 +1288,8 @@ function PlayerView({
   transpose: number;
   preferences: typeof defaultPlayerPreferences;
   activeLineId: string | null;
+  activeSectionId: string | null;
+  timelineSynced: boolean;
   currentSecond: number;
   playing: boolean;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -1386,13 +1403,19 @@ function PlayerView({
         </div>
       ) : null}
 
+      <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-surface px-3 py-2 text-xs">
+        <span>{song.timeline?.events.length ? (timelineSynced ? "Sincronizado" : "Aguardando evento") : "Sem sincronização"}</span>
+        <span className="text-muted">{song.timeline?.events.length ? "Timeline" : "Sem timeline"}</span>
+      </div>
+
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
         <nav className="flex min-w-max gap-2" aria-label="Navegação entre seções">
           {song.sections.map((section, index) => (
             <button
               key={section.id}
               type="button"
-              className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-muted transition hover:border-brand/30 hover:text-foreground"
+              aria-current={activeSectionId === section.id ? "location" : undefined}
+              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground ${activeSectionId === section.id ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`}
               onClick={() => document.getElementById(`player-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
               {index + 1}. {sectionName(section)}
