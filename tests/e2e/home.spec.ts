@@ -65,7 +65,7 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByRole("heading", { name: "Canção Completa" })).toBeVisible();
 
-    await page.locator('button[title="Biblioteca"]').click();
+    await page.getByRole("button", { name: "Biblioteca" }).last().click();
     await expect(page.getByText("Canção Completa")).toBeVisible();
 
     const saved = await page.evaluate(() => {
