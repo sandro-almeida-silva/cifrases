@@ -12,7 +12,9 @@ const seededSong = {
 test.describe("Cifrases", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript((song) => {
-      localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+      if (!localStorage.getItem("cifrases:songs:v1")) {
+        localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+      }
     }, seededSong);
   });
 
