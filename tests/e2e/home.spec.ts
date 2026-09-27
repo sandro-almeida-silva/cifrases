@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Home", () => {
   test("apresenta a proposta principal e as ações de entrada", async ({
-    page
+    page,
   }) => {
     await page.goto("/");
 
