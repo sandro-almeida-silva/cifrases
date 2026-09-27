@@ -24,6 +24,30 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Primeira Canção")).toBeVisible();
     await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
+    await expect(page.getByText("Detalhes da música")).toBeVisible();
+    await page.getByRole("button", { name: "Tocar" }).click();
+    await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Biblioteca" }).last()).toBeVisible();
+  });
+
+  test("duplicates and deletes a song from details", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Duplicar" }).click();
+    await expect(page.getByRole("heading", { name: "Primeira Canção (cópia)" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Biblioteca" }).last().click();
+    await expect(page.getByText("Primeira Canção (cópia)")).toBeVisible();
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção (cópia)" }).click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Excluir" }).click();
+    await expect(page.getByText("Primeira Canção (cópia)")).not.toBeVisible();
   });
 
   test("desktop sidebar starts collapsed and can expand", async ({ page }, testInfo) => {
