@@ -13,8 +13,8 @@ test.describe("Cifrases", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Nova música" }).click();
     await expect(page.getByRole("heading", { name: "Cadastrar música" })).toBeVisible();
-    await page.getByLabel("Título").fill("Canção de Teste");
-    await page.getByLabel("Artista").fill("Cifrases");
+    await page.getByText("Título", { exact: true }).locator("..").getByRole("textbox").fill("Canção de Teste");
+    await page.getByText("Artista", { exact: true }).locator("..").getByRole("textbox").fill("Cifrases");
     await page.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByRole("heading", { name: "Canção de Teste" })).toBeVisible();
   });
