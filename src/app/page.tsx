@@ -532,7 +532,7 @@ export default function HomePage() {
     setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
     audio.volume = audioVolume;
     audio.playbackRate = audioPlaybackRate;
-    const stored = Number(window.sessionStorage.getItem(`cifrases:audio-position:${audio.dataset["songId"]}`) ?? 0);
+    const stored = Number(window.sessionStorage.getItem(`cifrases:audio-position:${audio.getAttribute("data-song-id")}`) ?? 0);
     if (stored > 0 && stored < audio.duration) {
       audio.currentTime = stored;
       setCurrentSecond(stored);
