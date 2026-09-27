@@ -141,6 +141,7 @@ export default function HomePage() {
   const [audioPlaybackRate, setAudioPlaybackRate] = useState(1);
   const [audioError, setAudioError] = useState(false);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [autoScrollPaused, setAutoScrollPaused] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [timelineSynced, setTimelineSynced] = useState(false);
   const [presentationSection, setPresentationSection] = useState(0);
@@ -243,6 +244,7 @@ export default function HomePage() {
     setTranspose(0);
     setCurrentSecond(0);
     setActiveLineId(null);
+    setAutoScrollPaused(false);
     setActiveSectionId(null);
     setTimelineSynced(false);
     setPresentationSection(0);
@@ -561,6 +563,7 @@ export default function HomePage() {
     if (!audio || !Number.isFinite(audio.duration)) return;
     audio.currentTime = Math.min(audio.duration, Math.max(0, seconds));
     setCurrentSecond(audio.currentTime);
+    setAutoScrollPaused(false);
   }
 
   function setAudioVolumeValue(value: number) {
@@ -642,6 +645,7 @@ export default function HomePage() {
           transpose={transpose}
           preferences={playerPreferences}
           activeLineId={activeLineId}
+          autoScrollPaused={autoScrollPaused}
           activeSectionId={activeSectionId}
           timelineSynced={timelineSynced}
           currentSecond={currentSecond}
@@ -1288,6 +1292,7 @@ function PlayerView({
   transpose: number;
   preferences: typeof defaultPlayerPreferences;
   activeLineId: string | null;
+  autoScrollPaused: boolean;
   activeSectionId: string | null;
   timelineSynced: boolean;
   currentSecond: number;
@@ -1321,6 +1326,14 @@ function PlayerView({
     document.addEventListener("fullscreenchange", syncFullscreen);
     return () => document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
+
+  useEffect(() => {
+    if (!activeLineId || !playing || !preferences.autoScroll || autoScrollPaused) return;
+    document.querySelector<HTMLElement>(`[data-player-line-id="${activeLineId}"]`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [activeLineId, autoScrollPaused, playing, preferences.autoScroll]);
 
   if (!song) return <Empty />;
 
@@ -1408,6 +1421,19 @@ function PlayerView({
         <span className="text-muted">{song.timeline?.events.length ? "Timeline" : "Sem timeline"}</span>
       </div>
 
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-surface px-3 py-2 text-xs">
+        <span className="text-muted">Rolagem automática</span>
+        <button
+          type="button"
+          className="rounded-xl border border-white/10 px-3 py-1.5 font-semibold"
+          aria-pressed={preferences.autoScroll && !autoScrollPaused}
+          onClick={() => setAutoScrollPaused((paused) => !paused)}
+          disabled={!preferences.autoScroll}
+        >
+          {preferences.autoScroll ? (autoScrollPaused ? "Retomar" : "Pausar") : "Desativada"}
+        </button>
+      </div>
+
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
         <nav className="flex min-w-max gap-2" aria-label="Navegação entre seções">
           {song.sections.map((section, index) => (
@@ -1434,7 +1460,7 @@ function PlayerView({
             </div>
             <div className="space-y-4">
               {section.lines.map((item) => (
-                <div key={item.id} className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""} ${preferences.highContrast ? "border border-white/20" : ""}`}>
+                <div key={item.id} data-player-line-id={item.id} className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""} ${preferences.highContrast ? "border border-white/20" : ""}`}>
                   <div className="relative min-h-7 font-mono text-sm">
                     {(item.chords ?? []).map((chord) => (
                       <span key={`${item.id}-${chord.position}-${chord.chord}`} className={`absolute top-0 font-semibold text-chord ${preferences.highContrast ? "underline decoration-2 underline-offset-4" : ""}`} style={{ left: `${chord.position}ch` }}>{transposeChord(chord.chord, transpose)}</span>
