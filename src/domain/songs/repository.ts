@@ -18,7 +18,7 @@ const defaultLibraryState: LibraryState = {
   favorites: [],
   recent: [],
   playlists: [],
-  theme: "purple",
+  theme: "gold",
 };
 
 export function parseSongs(value: string | null): Song[] {
