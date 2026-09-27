@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.1.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.9...v1.1.0) (2026-09-27)
+
+
+### Features
+
+* implement core music workspace ([fc7ac7c](https://github.com/sandro-almeida-silva/cifrases/commit/fc7ac7c67fb15e25aacb6bb49042cffa629179ce))
+
 ## [1.0.9](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.8...v1.0.9) (2026-09-27)
 
 
