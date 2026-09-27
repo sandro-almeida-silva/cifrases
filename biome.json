@@ -31,8 +31,6 @@
   },
   "linter": {
     "enabled": true,
-    "rules": {
-      "recommended": false
-    }
+    "rules": {}
   }
 }
