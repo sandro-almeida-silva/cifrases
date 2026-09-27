@@ -56,7 +56,7 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "2. Verso" }).click();
     await expect(page.getByText("Cada acorde abre espaço para a próxima frase.")).toBeVisible();
     await page.getByRole("button", { name: "+ ½" }).click();
-    await expect(page.getByText("A", { exact: true }).first()).toBeVisible();
+    await expect(page.locator(".text-chord").filter({ hasText: "G#" }).first()).toBeVisible();
     await page.getByRole("button", { name: "Original" }).click();
     await expect(page.getByText("G", { exact: true }).first()).toBeVisible();
 
