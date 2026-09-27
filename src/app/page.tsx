@@ -541,7 +541,7 @@ export default function HomePage() {
 
   function handleAudioTime(seconds: number) {
     setCurrentSecond(seconds);
-    const songId = audioRef.current?.dataset.songId;
+    const songId = audioRef.current?.getAttribute("data-song-id");
     if (songId) window.sessionStorage.setItem(`cifrases:audio-position:${songId}`, String(seconds));
   }
 
