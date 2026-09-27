@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.9](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.8...v1.0.9) (2026-09-27)
+
+
+### Bug Fixes
+
+* configure CI cache without lockfile ([c63a086](https://github.com/sandro-almeida-silva/cifrases/commit/c63a086eb95c4990f12cf7c4230c79c5b24151fb))
+
 ## [1.0.8](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.7...v1.0.8) (2026-09-27)
 
 
