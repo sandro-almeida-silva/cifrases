@@ -612,7 +612,16 @@ export default function HomePage() {
 
           <nav className="mt-7 space-y-1" aria-label="Navegação principal">
             <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("library")} />
-            <NavButton icon={<PencilIcon />} label="Editor" active={view === "editor"} collapsed={desktopSidebarCollapsed} onClick={() => startEdit(song ?? songs[0] ?? emptySong())} />
+            <NavButton
+              icon={<PencilIcon />}
+              label="Editor"
+              active={view === "editor"}
+              collapsed={desktopSidebarCollapsed}
+              onClick={() => {
+                if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+                startEdit(song ?? songs[0] ?? emptySong());
+              }}
+            />
             <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("presentation")} />
             <NavButton icon={<Settings2 size={17} />} label="Configurações" active={view === "settings"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("settings")} />
           </nav>
