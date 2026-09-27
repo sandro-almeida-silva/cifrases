@@ -73,10 +73,17 @@ export default function HomePage() {
             ["Sincronização", AudioLines],
             ["Experiência", Sparkles]
           ].map(([label, Icon]) => (
-            <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
+            <div
+              key={String(label)}
+              className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"
+            >
               <Icon size={18} className="text-brand-soft" />
-              <p className="mt-3 text-sm font-semibold text-foreground">{String(label)}</p>
-              <p className="mt-1 text-xs leading-5 text-muted">Base preparada para a próxima etapa.</p>
+              <p className="mt-3 text-sm font-semibold text-foreground">
+                {String(label)}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Base preparada para a próxima etapa.
+              </p>
             </div>
           ))}
         </section>
