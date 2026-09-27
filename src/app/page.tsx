@@ -197,12 +197,14 @@ export default function HomePage() {
 
   function startNew() {
     setDraft(emptySong());
+    setMobileMenu(false);
     setView("editor");
   }
 
   function startEdit(item: Song) {
     setDraft(cloneSong(item));
     setSelectedId(item.id);
+    setMobileMenu(false);
     setView("editor");
   }
 
