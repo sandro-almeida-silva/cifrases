@@ -1246,9 +1246,24 @@ function PlayerView({
         </div>
       ) : null}
 
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
+        <div className="flex min-w-max gap-2" aria-label="Navegação entre seções">
+          {song.sections.map((section, index) => (
+            <button
+              key={section.id}
+              type="button"
+              className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-muted transition hover:border-brand/30 hover:text-foreground"
+              onClick={() => document.getElementById(`player-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            >
+              {index + 1}. {sectionName(section)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-surface p-5 sm:p-8" style={{ fontSize: `${fontScale}rem` }}>
         {song.sections.map((section) => (
-          <section key={section.id}>
+          <section key={section.id} id={`player-section-${section.id}`}>
             <div className="mb-4 flex items-center gap-3">
               <span className="h-px flex-1 bg-white/8" />
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">{sectionName(section)}</span>
