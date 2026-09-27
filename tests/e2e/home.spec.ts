@@ -45,7 +45,7 @@ test.describe("Cifrases", () => {
     const savedSlug = await page.evaluate(() => {
       const raw = localStorage.getItem("cifrases:songs:v1");
       const songs = raw ? JSON.parse(raw) : [];
-      return songs.at(-1)?.slug;
+      return songs.find((song: { title?: string }) => song.title === "Canção Dourada")?.slug;
     });
     expect(savedSlug).toBe("cancao-dourada");
   });
