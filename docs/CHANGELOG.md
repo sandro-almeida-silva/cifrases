@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.2.0...v1.2.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **accessibility:** normalize form control surfaces ([83e4bcb](https://github.com/sandro-almeida-silva/cifrases/commit/83e4bcbbeaa6e266d8130129c517cf04312111d2))
+* **accessibility:** style native selects consistently ([8dd4745](https://github.com/sandro-almeida-silva/cifrases/commit/8dd4745dc12ce07f90daf680dce399e61dfda693))
+* **test:** keep select accessibility coverage inside suite ([942f578](https://github.com/sandro-almeida-silva/cifrases/commit/942f578a80c20278c55bafbfee8de5f8f4784936))
+
 # [1.2.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.1.2...v1.2.0) (2026-09-27)
 
 
