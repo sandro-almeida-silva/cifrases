@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.13.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.12.0...v1.13.0) (2026-09-27)
+
+
+### Features
+
+* **player:** synchronize lyrics with timeline ([155cc25](https://github.com/sandro-almeida-silva/cifrases/commit/155cc25dc1d21c50f4e3a6fb6b2418dcd4c32eb5))
+
 # [1.12.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.11.0...v1.12.0) (2026-09-27)
 
 
