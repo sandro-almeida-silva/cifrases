@@ -32,6 +32,66 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("button", { name: "Recolher menu" })).toBeVisible();
   });
 
+  test("creates a complete song manually", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    await page.getByRole("button", { name: "Nova música" }).click();
+    await expect(page.getByRole("heading", { name: "Cadastrar música" })).toBeVisible();
+
+    await page.getByText("Título", { exact: true }).locator("..").getByRole("textbox").fill("Canção Completa");
+    await page.getByText("Artista", { exact: true }).locator("..").getByRole("textbox").fill("Banda Cifrases");
+    await page.getByText("Categoria", { exact: true }).locator("..").getByRole("textbox").fill("Louvor");
+    await page.getByText("Tonalidade", { exact: true }).locator("..").getByRole("textbox").fill("G");
+    await page.getByText("BPM", { exact: true }).locator("..").getByRole("spinbutton").fill("120");
+
+    await page.getByRole("textbox", { name: "Nome da seção 1" }).fill("Verso principal");
+    await page.getByRole("textbox", { name: "Letra da linha 1 da seção 1" }).fill("Minha primeira linha");
+    await page.getByRole("textbox", { name: "Acordes da linha 1 da seção 1" }).fill("G@0 C@20");
+
+    await page.getByRole("button", { name: "Seção", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Nome da seção 2" })).toBeVisible();
+    await page.getByRole("textbox", { name: "Nome da seção 2" }).fill("Refrão");
+    await page.getByRole("textbox", { name: "Letra da linha 1 da seção 2" }).fill("Meu refrão");
+    await page.getByRole("textbox", { name: "Acordes da linha 1 da seção 2" }).fill("C@0 G@20");
+
+    await page.getByRole("button", { name: "Mover seção 2 para cima" }).click();
+    await expect(page.getByRole("textbox", { name: "Nome da seção 1" })).toHaveValue("Refrão");
+    await page.getByRole("button", { name: "Remover seção 2" }).click();
+
+    await page.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByRole("heading", { name: "Canção Completa" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Biblioteca" }).last().click();
+    await expect(page.getByText("Canção Completa")).toBeVisible();
+
+    const saved = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      const songs = raw ? JSON.parse(raw) : [];
+      return songs.find((song: { title?: string }) => song.title === "Canção Completa");
+    });
+    expect(saved.artist).toBe("Banda Cifrases");
+    expect(saved.sections[0].label).toBe("Refrão");
+    expect(saved.sections[0].lines[0].chords).toEqual([
+      { chord: "C", position: 0 },
+      { chord: "G", position: 20 },
+    ]);
+  });
+
+  test("shows validation errors before saving", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+    await page.getByRole("button", { name: "Nova música" }).click();
+    await page.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByText("Informe o título da música.")).toBeVisible();
+    await expect(page.getByText("Informe a letra ou um acorde na linha 1.")).toBeVisible();
+  });
+
   test("creates a song with an automatic slug", async ({ page }, testInfo) => {
     await page.goto("/");
 
@@ -53,6 +113,7 @@ test.describe("Cifrases", () => {
       .locator("..")
       .getByRole("textbox")
       .fill("Cifrases");
+    await page.getByRole("textbox", { name: "Letra da linha 1 da seção 1" }).fill("Linha de teste");
     await page.getByRole("button", { name: "Salvar" }).click();
 
     await expect(page.getByRole("heading", { name: "Canção Dourada" })).toBeVisible();
