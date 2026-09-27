@@ -11,6 +11,7 @@ export function transposeChord(chord: string, semitones: number): string {
   if (!match) return chord;
   const root = match[1];
   const suffix = match[2] ?? "";
+  if (!root) return chord;
   const normalizedRoot = `${root[0]?.toUpperCase() ?? ""}${root.slice(1)}`;
   const index = NOTE_INDEX[normalizedRoot] ?? NOTE_INDEX[normalizedRoot.toUpperCase()];
   if (index === undefined) return chord;
