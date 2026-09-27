@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Cifrases",
   description: "Sua música, no tempo certo.",
   applicationName: "Cifrases",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icons/cifrases.svg",
   },
