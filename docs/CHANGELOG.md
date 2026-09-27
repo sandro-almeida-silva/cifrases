@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.2...v1.0.3) (2026-09-27)
+
+
+### Bug Fixes
+
+* make semantic-release config lint-safe ([9b628ec](https://github.com/sandro-almeida-silva/cifrases/commit/9b628eceb2738c332f04f9ea077b5edfd8f4f122))
+* simplify Biome lint presets ([65f9371](https://github.com/sandro-almeida-silva/cifrases/commit/65f9371cb72233514cb5bfe2fb86d89ba6c3d557))
+
 ## [1.0.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.1...v1.0.2) (2026-09-27)
 
 
