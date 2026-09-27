@@ -137,7 +137,7 @@ export default function HomePage() {
   }, [library, theme]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset["theme"] = theme;
   }, [theme]);
 
   useEffect(() => {
@@ -162,7 +162,7 @@ export default function HomePage() {
   }, [category, library.recent, query, sort, songs]);
 
   const categories = Array.from(
-    new Set(songs.map((item) => item.category).filter(Boolean)),
+    new Set(songs.map((item) => item.category).filter((value): value is string => Boolean(value))),
   ).sort();
 
   useEffect(() => {
