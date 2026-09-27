@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.4...v1.0.5) (2026-09-27)
+
+
+### Bug Fixes
+
+* configure Biome for semantic release placeholders ([71d20ef](https://github.com/sandro-almeida-silva/cifrases/commit/71d20ef4156c1c56d0a247d762cff8799bf17bd4))
+
 ## [1.0.4](https://github.com/sandro-almeida-silva/cifrases/compare/v1.0.3...v1.0.4) (2026-09-27)
 
 
