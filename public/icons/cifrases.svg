@@ -1,4 +1,5 @@
-<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="cifrases-icon-title">
+  <title id="cifrases-icon-title">Cifrases</title>
   <rect width="96" height="96" rx="28" fill="#7C5CFF"/>
   <path d="M27 24V64.5C27 72 32.5 77 40 77C47.5 77 53 72.4 53 66C53 59.6 47.5 55 40 55C36.9 55 33.9 55.9 31.5 57.5V34.5L67 26V56.5C63.6 54.4 59.5 53.5 55.7 54.2" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="67" cy="66" r="10" fill="#F1C96B"/>
