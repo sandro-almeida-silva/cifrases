@@ -96,6 +96,7 @@ test.describe("Cifrases", () => {
     await page.goto("/");
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
     }
 
     await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
@@ -123,6 +124,7 @@ test.describe("Cifrases", () => {
     await page.goto("/");
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
     }
 
     await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
