@@ -230,10 +230,10 @@ export default function HomePage() {
   function saveDraft() {
     if (!draft) return;
     const errors: Record<string, string> = {};
-    if (!draft.title.trim()) errors.title = "Informe o título da música.";
-    if (draft.bpm !== undefined && (draft.bpm < 1 || draft.bpm > 300)) errors.bpm = "Informe um BPM entre 1 e 300.";
+    if (!draft.title.trim()) errors["title"] = "Informe o título da música.";
+    if (draft.bpm !== undefined && (draft.bpm < 1 || draft.bpm > 300)) errors["bpm"] = "Informe um BPM entre 1 e 300.";
     if (draft.sections.length === 0) {
-      errors.sections = "Adicione pelo menos uma seção.";
+      errors["sections"] = "Adicione pelo menos uma seção.";
     }
 
     draft.sections.forEach((section) => {
@@ -327,7 +327,11 @@ export default function HomePage() {
       const target = index + direction;
       if (index < 0 || target < 0 || target >= current.sections.length) return current;
       const sections = [...current.sections];
-      [sections[index], sections[target]] = [sections[target], sections[index]];
+      const currentSection = sections[index];
+      const targetSection = sections[target];
+      if (!currentSection || !targetSection) return current;
+      sections[index] = targetSection;
+      sections[target] = currentSection;
       return { ...current, sections };
     });
   }
