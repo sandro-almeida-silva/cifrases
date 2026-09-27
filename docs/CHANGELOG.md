@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.9.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.8.0...v1.9.0) (2026-09-27)
+
+
+### Features
+
+* **player:** render chords and navigate sections ([882cd51](https://github.com/sandro-almeida-silva/cifrases/commit/882cd5169e2acffea6775ced1c114a5f61c88ddd))
+
 # [1.8.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.7.0...v1.8.0) (2026-09-27)
 
 
