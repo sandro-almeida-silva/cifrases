@@ -92,6 +92,56 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Informe a letra ou um acorde na linha 1.")).toBeVisible();
   });
 
+  test("edits a song without duplicating it and persists changes", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Editar" }).click();
+    await expect(page.getByRole("heading", { name: "Editar música" })).toBeVisible();
+
+    await page.getByText("Título", { exact: true }).locator("..").getByRole("textbox").fill("Primeira Canção Atualizada");
+    await expect(page.getByText("Alterações não salvas")).toBeVisible();
+    await page.getByRole("button", { name: "Salvar" }).click();
+
+    await expect(page.getByRole("heading", { name: "Primeira Canção Atualizada" })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Primeira Canção Atualizada")).toBeVisible();
+
+    const saved = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      const songs = raw ? JSON.parse(raw) : [];
+      return songs;
+    });
+    expect(saved).toHaveLength(1);
+    expect(saved[0].title).toBe("Primeira Canção Atualizada");
+  });
+
+  test("warns before discarding unsaved edits", async ({ page }, testInfo) => {
+    await page.goto("/");
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await page.getByRole("button", { name: "Editar" }).click();
+    await page.getByText("Título", { exact: true }).locator("..").getByRole("textbox").fill("Alteração descartada");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Cancelar" }).click();
+
+    await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
+    await expect(page.getByText("Alteração descartada")).not.toBeVisible();
+
+    const saved = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      const songs = raw ? JSON.parse(raw) : [];
+      return songs[0];
+    });
+    expect(saved.title).toBe("Primeira Canção");
+  });
+
   test("creates a song with an automatic slug", async ({ page }, testInfo) => {
     await page.goto("/");
 
