@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.11.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.10.0...v1.11.0) (2026-09-27)
+
+
+### Features
+
+* **player:** add persistent reading preferences ([0814e0c](https://github.com/sandro-almeida-silva/cifrases/commit/0814e0c2681168aa21f9b657de7f3cc67cc279b9))
+
 # [1.10.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.9.0...v1.10.0) (2026-09-27)
 
 
