@@ -795,6 +795,7 @@ function PlayerView({
 
       {song.media?.audioUrl ? (
         <div className="mt-3 rounded-2xl border border-white/10 bg-surface p-3">
+          {/* biome-ignore lint/a11y/useMediaCaption: music practice audio does not contain spoken dialogue. */}
           <audio ref={audioRef} className="hidden" src={song.media.audioUrl} onTimeUpdate={(event) => onTime(event.currentTarget.currentTime)} onEnded={() => onTime(0)} />
           <button type="button" className="grid size-11 place-items-center rounded-xl bg-brand text-white" onClick={onToggleAudio} aria-label={playing ? "Pausar áudio" : "Tocar áudio"}>
             {playing ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}
