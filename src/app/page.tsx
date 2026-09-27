@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   ArrowRight,
   AudioLines,
+  ChevronLeft,
+  ChevronRight,
   Heart,
   Library,
   Menu,
@@ -100,8 +102,10 @@ export default function HomePage() {
     favorites: [],
     recent: [],
     playlists: [],
-    theme: "purple",
+    theme: "gold",
   });
+
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
   const [view, setView] = useState<View>("library");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Song | null>(null);
@@ -210,7 +214,21 @@ export default function HomePage() {
 
   function saveDraft() {
     if (!draft?.title.trim()) return;
-    const next = { ...draft, title: draft.title.trim(), slug: slugify(draft.slug || draft.title) };
+    const generatedBaseSlug = slugify(draft.title);
+    const existingSlugs = new Set(
+      songs
+        .filter((item) => item.id !== draft.id)
+        .map((item) => item.slug),
+    );
+
+    let generatedSlug = generatedBaseSlug;
+    let suffix = 2;
+    while (existingSlugs.has(generatedSlug)) {
+      generatedSlug = generatedBaseSlug ? `${generatedBaseSlug}-${suffix}` : `musica-${suffix}`;
+      suffix += 1;
+    }
+
+    const next = { ...draft, title: draft.title.trim(), slug: generatedSlug };
     setSongs((state) => {
       const exists = state.some((item) => item.id === next.id);
       return exists ? state.map((item) => (item.id === next.id ? next : item)) : [next, ...state];
@@ -435,26 +453,47 @@ export default function HomePage() {
       <div className="flex min-h-screen">
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-40 w-72 border-r border-white/10 bg-surface p-5 transition-transform lg:static lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-40 border-r border-white/10 bg-surface transition-[width,transform,padding] duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:overflow-visible",
+            desktopSidebarCollapsed ? "lg:w-20 lg:p-3" : "lg:w-72 lg:p-5",
+            "w-72 p-5",
             mobileMenu ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="flex items-center justify-between">
-            <Logo />
-            <button type="button" className="lg:hidden" onClick={() => setMobileMenu(false)} aria-label="Fechar menu">
+          <div className="relative flex items-center justify-between">
+            <Logo compact={desktopSidebarCollapsed} />
+            <button type="button" className="lg:hidden rounded-xl p-2 text-muted hover:bg-white/5" onClick={() => setMobileMenu(false)} aria-label="Fechar menu">
               <X size={18} />
+            </button>
+            <button
+              type="button"
+              className="absolute -right-7 top-1/2 hidden size-7 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-panel text-muted shadow-lg shadow-black/20 transition hover:border-white/20 hover:text-foreground lg:grid"
+              onClick={() => setDesktopSidebarCollapsed((value) => !value)}
+              aria-label={desktopSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+              title={desktopSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+            >
+              {desktopSidebarCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
             </button>
           </div>
 
-          <button type="button" className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white" onClick={startNew}>
-            <Plus size={18} /> Nova música
+          <button
+            type="button"
+            className={[
+              "mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:brightness-105",
+              desktopSidebarCollapsed ? "lg:size-11 lg:rounded-2xl lg:p-0" : "",
+            ].join(" ")}
+            onClick={startNew}
+            aria-label="Nova música"
+            title={desktopSidebarCollapsed ? "Nova música" : undefined}
+          >
+            <Plus size={18} />
+            <span className={desktopSidebarCollapsed ? "hidden" : "lg:inline"}>Nova música</span>
           </button>
 
           <nav className="mt-7 space-y-1" aria-label="Navegação principal">
-            <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} onClick={() => setView("library")} />
-            <NavButton icon={<PencilIcon />} label="Editor" active={view === "editor"} onClick={() => startEdit(song ?? songs[0] ?? emptySong())} />
-            <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} onClick={() => setView("presentation")} />
-            <NavButton icon={<Settings2 size={17} />} label="Configurações" active={view === "settings"} onClick={() => setView("settings")} />
+            <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} collapsed={desktopSidebarCollapsed} onClick={() => setView("library")} />
+            <NavButton icon={<PencilIcon />} label="Editor" active={view === "editor"} collapsed={desktopSidebarCollapsed} onClick={() => startEdit(song ?? songs[0] ?? emptySong())} />
+            <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} collapsed={desktopSidebarCollapsed} onClick={() => setView("presentation")} />
+            <NavButton icon={<Settings2 size={17} />} label="Configurações" active={view === "settings"} collapsed={desktopSidebarCollapsed} onClick={() => setView("settings")} />
           </nav>
         </aside>
 
@@ -495,13 +534,35 @@ function PencilIcon() {
   return <Pencil size={17} />;
 }
 
-function NavButton({ icon, label, active, onClick }: { icon: ReactNode; label: string; active: boolean; onClick: () => void }) {
+function NavButton({
+  icon,
+  label,
+  active,
+  collapsed,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+}) {
   return (
-    <button type="button" className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${
-      active ? "bg-brand/12 text-brand-soft" : "text-muted hover:bg-white/5 hover:text-foreground"
-    }`} onClick={onClick}>
+    <button
+      type="button"
+      className={`group relative flex w-full items-center rounded-xl py-2.5 text-sm transition ${
+        collapsed ? "justify-center lg:px-0" : "gap-3 px-3"
+      } ${active ? "bg-brand/12 text-brand-soft" : "text-muted hover:bg-white/5 hover:text-foreground"}`}
+      onClick={onClick}
+      title={collapsed ? label : undefined}
+    >
       {icon}
-      {label}
+      <span className={collapsed ? "hidden" : "lg:inline"}>{label}</span>
+      {collapsed ? (
+        <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg border border-white/10 bg-panel px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-xl transition-opacity group-hover:opacity-100 lg:block">
+          {label}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -661,7 +722,6 @@ function EditorView({
           ["Categoria", song.category ?? "", (value: string) => setSong({ ...song, category: value })],
           ["Tonalidade", song.key ?? "", (value: string) => setSong({ ...song, key: value.toUpperCase() })],
           ["BPM", String(song.bpm ?? ""), (value: string) => setSong({ ...song, bpm: Number(value) || undefined })],
-          ["Slug", song.slug, (value: string) => setSong({ ...song, slug: value })],
         ].map(([label, value, update]) => (
           <label key={label as string}>
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-muted">{label as string}</span>
