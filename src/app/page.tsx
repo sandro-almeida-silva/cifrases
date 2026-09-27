@@ -142,7 +142,7 @@ export default function HomePage() {
   }, [library, theme]);
 
   useEffect(() => {
-    document.documentElement.dataset["theme"] = theme;
+    document.documentElement.dataset.theme = theme;
   }, [theme]);
 
   useEffect(() => {
