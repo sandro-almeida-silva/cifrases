@@ -120,6 +120,7 @@ export default function HomePage() {
   const [view, setView] = useState<View>("library");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Song | null>(null);
+  const [draftOriginal, setDraftOriginal] = useState<Song | null>(null);
   const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("title");
@@ -135,6 +136,7 @@ export default function HomePage() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const draftDirty = Boolean(draft && draftOriginal && JSON.stringify(draft) !== JSON.stringify(draftOriginal));
 
   useEffect(() => {
     try {
@@ -163,6 +165,16 @@ export default function HomePage() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!draftDirty) return undefined;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [draftDirty]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -220,14 +232,18 @@ export default function HomePage() {
   }
 
   function startNew() {
-    setDraft(emptySong());
+    const next = emptySong();
+    setDraft(next);
+    setDraftOriginal(cloneSong(next));
     setDraftErrors({});
     setMobileMenu(false);
     setView("editor");
   }
 
   function startEdit(item: Song) {
-    setDraft(cloneSong(item));
+    const next = cloneSong(item);
+    setDraft(next);
+    setDraftOriginal(cloneSong(next));
     setDraftErrors({});
     setSelectedId(item.id);
     setMobileMenu(false);
@@ -277,8 +293,17 @@ export default function HomePage() {
     });
     setSelectedId(next.id);
     setDraft(null);
+    setDraftOriginal(null);
     setDraftErrors({});
     setView("player");
+  }
+
+  function cancelDraft() {
+    if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+    setDraft(null);
+    setDraftOriginal(null);
+    setDraftErrors({});
+    setView(song ? "player" : "library");
   }
 
   function deleteSong(id: string) {
@@ -475,7 +500,8 @@ export default function HomePage() {
           song={draft}
           setSong={setDraft}
           onSave={saveDraft}
-          onCancel={() => setView(song ? "player" : "library")}
+          onCancel={cancelDraft}
+          dirty={draftDirty}
           errors={draftErrors}
           onAddSection={addSection}
           onAddLine={addLine}
@@ -795,6 +821,7 @@ function LibraryView({
 function EditorView({
   song,
   setSong,
+  dirty,
   errors,
   onSave,
   onCancel,
@@ -808,6 +835,7 @@ function EditorView({
 }: {
   song: Song;
   setSong: (song: Song | null) => void;
+  dirty: boolean;
   errors: DraftErrors;
   onSave: () => void;
   onCancel: () => void;
@@ -840,8 +868,9 @@ function EditorView({
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">Cadastrar música</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">{song.id && "Editar música"}</h1>
           <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
+          {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null>
         </div>
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onCancel}>Cancelar</button>
