@@ -1250,7 +1250,7 @@ function PlayerView({
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onFavorite} aria-label="Favoritar"><Heart size={16} fill={favorite ? "currentColor" : "none"} /></button>
           <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onEdit} aria-label="Editar"><Pencil size={16} /></button>
-          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onAutoScroll}>Auto-scroll {autoScroll ? "on" : "off"}</button>
+          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ autoScroll: !preferences.autoScroll })}>Auto-scroll {preferences.autoScroll ? "on" : "off"}</button>
         </div>
       </div>
 
