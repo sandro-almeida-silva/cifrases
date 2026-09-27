@@ -1118,9 +1118,7 @@ function DetailView({
               <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onEdit}><Pencil size={16} /> Editar</button>
               <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onDuplicate}><Plus size={16} /> Duplicar</button>
               <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm" onClick={onPresentation} disabled={!presentationAvailable}><Presentation size={16} /> Apresentar</button>
-              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-red-400/20 px-4 py-2.5 text-sm text-red-200" onClick={() => {
-                if (window.confirm(`Excluir "${song.title}"?`)) onDelete();
-              }}><Trash2 size={16} /> Excluir</button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-red-400/20 px-4 py-2.5 text-sm text-red-200" onClick={onDelete}><Trash2 size={16} /> Excluir</button>
             </div>
           </div>
         </div>
