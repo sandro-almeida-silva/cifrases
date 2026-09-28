@@ -434,17 +434,6 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [draft, view]);
 
-  function cancelDraft() {
-    if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
-    clearEditorAutosave();
-    setEditorAutosaveStatus("idle");
-    setDraft(null);
-    setDraftOriginal(null);
-    setDraftMode("create");
-    setDraftErrors({});
-    setView(song ? "player" : "library");
-  }
-
   function navigateFromEditor(nextView: View) {
     if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
     setView(nextView);
