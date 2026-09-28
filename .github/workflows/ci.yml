@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Quality
@@ -21,8 +25,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager-cache: false
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
   e2e:
@@ -38,7 +42,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager-cache: false
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
