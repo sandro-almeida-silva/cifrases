@@ -158,6 +158,11 @@ export default function HomePage() {
   const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
   const [draftOriginalName, setDraftOriginalName] = useState<string | null>(null);
   const [draftOriginalError, setDraftOriginalError] = useState("");
+  const [ocrState, setOcrState] = useState<{
+    status: "idle" | "running" | "error";
+    progress: number;
+    message: string;
+  }>({ status: "idle", progress: 0, message: "" });
   const [editorAutosaveStatus, setEditorAutosaveStatus] = useState<"idle" | "saved" | "recovered">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const draftDirty = Boolean(draft && draftOriginal && JSON.stringify(draft) !== JSON.stringify(draftOriginal));
@@ -408,9 +413,6 @@ export default function HomePage() {
       return exists ? state.map((item) => (item.id === next.id ? next : item)) : [next, ...state];
     });
     setSelectedId(next.id);
-    if (draftMode === "create" && draft.media?.original?.id) {
-      void deleteOriginalImport(draft.media.original.id).catch(() => undefined);
-    }
     clearEditorAutosave();
     setEditorAutosaveStatus("idle");
     setDraft(null);
@@ -549,6 +551,63 @@ export default function HomePage() {
           : section,
       ),
     }));
+  }
+
+  async function extractOcr() {
+    if (!draft?.media?.original?.id || ocrState.status === "running") return;
+
+    setOcrState({ status: "running", progress: 0, message: "Preparando OCR..." });
+    try {
+      const original = await loadOriginalImport(draft.media.original.id);
+      if (!original) throw new Error("O arquivo original do rascunho não está disponível.");
+      const { extractSongFromOriginal } = await import("@/domain/songs/ocr");
+      const result = await extractSongFromOriginal(original, draft.media.original.mimeType, (progress) => {
+        setOcrState({
+          status: "running",
+          progress: progress.progress,
+          message: progress.stage === "recognizing" ? "Reconhecendo texto..." : progress.stage === "finalizing" ? "Organizando estrutura..." : "Preparando OCR...",
+        });
+      });
+
+      updateDraft((current) => ({
+        ...current,
+        sections: result.sections,
+        ocr: {
+          confidence: result.confidence,
+          lowConfidenceCount: result.lowConfidenceCount,
+          processedAt: new Date().toISOString(),
+          source: result.source,
+        },
+      }));
+      setOcrState({
+        status: "idle",
+        progress: 100,
+        message: result.lowConfidenceCount
+          ? `OCR concluído com ${result.lowConfidenceCount} linha(s) de baixa confiança. Revise antes de salvar.`
+          : "OCR concluído. Revise a estrutura antes de salvar.",
+      });
+    } catch (error: unknown) {
+      setOcrState({
+        status: "error",
+        progress: 0,
+        message: error instanceof Error ? error.message : "Não foi possível executar o OCR.",
+      });
+    }
+  }
+
+  function cancelDraft() {
+    if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+    if (draftMode === "create" && draft?.media?.original?.id) {
+      void deleteOriginalImport(draft.media.original.id).catch(() => undefined);
+    }
+    clearEditorAutosave();
+    setEditorAutosaveStatus("idle");
+    setDraft(null);
+    setDraftOriginal(null);
+    setDraftMode("create");
+    setDraftErrors({});
+    setOcrState({ status: "idle", progress: 0, message: "" });
+    setView(song ? "player" : "library");
   }
 
   function attachAudio(file: File) {
@@ -764,6 +823,8 @@ export default function HomePage() {
           originalPreviewUrl={draftOriginalUrl}
           originalFileName={draftOriginalName}
           originalError={draftOriginalError}
+          ocrState={ocrState}
+          onExtractOcr={extractOcr}
           onBuildTimeline={buildTimeline}
           autosaveStatus={editorAutosaveStatus}
           onTimelineUpdate={(patch) => updateDraft((current) => ({ ...current, timeline: { ...(current.timeline ?? { events: [] }), ...patch } }))}
@@ -1152,6 +1213,8 @@ function EditorView({
   originalPreviewUrl: string | null;
   originalFileName: string | null;
   originalError: string;
+  ocrState: { status: "idle" | "running" | "error"; progress: number; message: string };
+  onExtractOcr: () => void;
   onBuildTimeline: () => void;
   autosaveStatus: "idle" | "saved" | "recovered";
   onTimelineUpdate: (patch: Partial<Song["timeline"]>) => void;
@@ -1225,6 +1288,42 @@ function EditorView({
 
       {errors.sections ? <p className="mt-4 text-sm text-red-300">{errors.sections}</p> : null}
 
+      {song.media?.original ? (
+        <div className="mt-5 rounded-2xl border border-brand/20 bg-brand/5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">Extração inteligente</p>
+              <p className="mt-1 text-xs text-muted">Reconhece o texto localmente e organiza seções e linhas para revisão.</p>
+            </div>
+            <button
+              type="button"
+              className="rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              onClick={onExtractOcr}
+              disabled={ocrState.status === "running"}
+            >
+              {ocrState.status === "running" ? "Processando..." : "Extrair com OCR"}
+            </button>
+          </div>
+          {ocrState.status === "running" ? (
+            <div className="mt-4">
+              <div className="mb-2 flex justify-between text-xs text-muted">
+                <span>{ocrState.message}</span><span>{ocrState.progress}%</span>
+              </div>
+              <progress className="h-2 w-full" value={ocrState.progress} max={100} aria-label="Progresso do OCR" />
+            </div>
+          ) : null}
+          {ocrState.message && ocrState.status !== "running" ? (
+            <p className={`mt-3 text-xs ${ocrState.status === "error" ? "text-red-300" : "text-amber-200"}`} role={ocrState.status === "error" ? "alert" : "status"}>{ocrState.message}</p>
+          ) : null}
+          {song.ocr ? (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-white/5 px-2.5 py-1 text-muted">Confiança média: {song.ocr.confidence}%</span>
+              {song.ocr.lowConfidenceCount > 0 ? <span className="rounded-full bg-amber-400/10 px-2.5 py-1 text-amber-200">{song.ocr.lowConfidenceCount} linha(s) para revisar</span> : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-5 rounded-2xl border border-white/10 bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1274,8 +1373,13 @@ function EditorView({
               {section.lines.map((item, lineIndex) => (
                 <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_260px_auto]">
                   <div>
+                    {item.ocrConfidence !== undefined && item.ocrConfidence < 70 ? (
+                      <span className="mb-1 inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
+                        Baixa confiança: {item.ocrConfidence}%
+                      </span>
+                    ) : null}
                     <input
-                      className={`${inputClass} ${errors[`line-${item.id}`] ? "border-red-400/60" : ""}`}
+                      className={`${inputClass} ${item.ocrConfidence !== undefined && item.ocrConfidence < 70 ? "border-amber-400/50" : ""} ${errors[`line-${item.id}`] ? "border-red-400/60" : ""}`}
                       aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
                       placeholder="Letra"
                       value={item.text}
