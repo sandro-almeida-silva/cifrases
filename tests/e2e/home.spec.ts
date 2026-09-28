@@ -277,6 +277,83 @@ test.describe("Cifrases", () => {
     expect(saved.title).toBe("Primeira Canção");
   });
 
+  test("imports a validated image as a reviewable draft", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    const importInput = page.locator('input[type="file"][accept*=".pdf"]');
+    await expect(importInput).toHaveCount(1);
+
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    await importInput.setInputFiles({
+      name: "cifra-original.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+
+    await expect(page.getByRole("heading", { name: "Cadastrar música" })).toBeVisible();
+    await expect(page.getByText("Arquivo original")).toBeVisible();
+    await expect(page.getByText("cifra-original.png")).toBeVisible();
+    await expect(page.getByText("Revisão obrigatória")).toBeVisible();
+    await expect(page.getByText("A imagem/PDF é apenas a fonte original. O conteúdo extraído deverá ser revisado antes da publicação.")).toBeVisible();
+    await expect(page.locator('img[alt="Pré-visualização de cifra-original.png"]')).toBeVisible();
+
+    const draft = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:editor-autosave:v1");
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(draft).toBeNull();
+
+    await page.getByRole("textbox", { name: "Letra da linha 1 da seção 1" }).fill("Conteúdo revisado");
+    await expect(page.getByText("Alterações não salvas")).toBeVisible();
+    await page.waitForTimeout(800);
+
+    const autosave = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:editor-autosave:v1");
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(autosave.song.media.original.mimeType).toBe("image/png");
+    expect(autosave.song.media.original.name).toBe("cifra-original.png");
+
+    await page.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByRole("heading", { name: "cifra-original.png" })).toBeVisible();
+
+    const saved = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      const songs = raw ? JSON.parse(raw) : [];
+      return songs[0];
+    });
+    expect(saved.media.original.mimeType).toBe("image/png");
+    expect(saved.media.original.name).toBe("cifra-original.png");
+  });
+
+  test("rejects an invalid original file without creating a draft", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+    }
+
+    const importInput = page.locator('input[type="file"][accept*=".pdf"]');
+    await importInput.setInputFiles({
+      name: "cifra.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("<script>alert(1)</script>"),
+    });
+
+    await expect(page.getByText("O conteúdo do arquivo não corresponde a um formato suportado.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
+
+    const songs = await page.evaluate(() => localStorage.getItem("cifrases:songs:v1"));
+    expect(songs).toBeNull();
+  });
+
   test("creates a song with an automatic slug", async ({ page }, testInfo) => {
     await page.goto("/");
 
