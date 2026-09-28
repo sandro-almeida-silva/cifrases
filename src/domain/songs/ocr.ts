@@ -1,7 +1,8 @@
 import { createWorker } from "tesseract.js";
-import type { SongSection, SongSectionType } from "./types";
+import type { ChordPlacement, SongSection, SongSectionType } from "./types";
 
 const OCR_LOW_CONFIDENCE = 70;
+const OCR_CHORD_REVIEW_CONFIDENCE = 78;
 const MAX_PDF_PAGES = 10;
 const MAX_RENDER_WIDTH = 2500;
 const SECTION_PATTERNS: Array<{ type: SongSectionType; pattern: RegExp; label: string }> = [
@@ -26,7 +27,76 @@ export type OcrExtraction = {
   source: "image" | "pdf";
 };
 
-type OcrLine = { text: string; confidence: number };
+type OcrWord = {
+  text: string;
+  confidence: number;
+};
+
+type OcrLine = {
+  text: string;
+  confidence: number;
+  words?: OcrWord[];
+};
+
+const CHORD_TOKEN = /^[A-G](?:#|b)?(?:(?:m|min|maj|major|minor|dim|aug|sus|add|M|º|°|\+|-)?(?:2|4|5|6|7|9|11|13)?(?:sus2|sus4|add2|add4|add9|add11|add13)?)(?:\/[A-G](?:#|b)?)?$/i;
+
+function normalizeChordToken(value: string): string {
+  return value
+    .trim()
+    .replace(/^[\[({]+|[\])},;:]+$/g, "")
+    .replace(/^[‘’'"]|[‘’'"]$/g, "");
+}
+
+function chordCandidates(text: string, words: OcrWord[] = []): Array<{ chord: string; position: number; confidence: number }> {
+  const source = words.length
+    ? words
+    : text.split(/\s+/).filter(Boolean).map((word) => ({ text: word, confidence: 100 }));
+
+  const result: Array<{ chord: string; position: number; confidence: number }> = [];
+  let searchFrom = 0;
+  for (const word of source) {
+    const chord = normalizeChordToken(word.text);
+    if (!CHORD_TOKEN.test(chord)) continue;
+    const position = text.toLowerCase().indexOf(chord.toLowerCase(), searchFrom);
+    if (position < 0) continue;
+    searchFrom = position + chord.length;
+    result.push({ chord, position, confidence: word.confidence });
+  }
+  return result;
+}
+
+function isChordOnlyLine(text: string, candidates: ReturnType<typeof chordCandidates>): boolean {
+  const tokens = text.split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && candidates.length === tokens.length;
+}
+
+export function recognizeChords(
+  text: string,
+  words: OcrWord[] = [],
+): { chords: ChordPlacement[]; reviewCount: number } {
+  const candidates = chordCandidates(text, words);
+  const chords = candidates.map((item) => ({
+    chord: item.chord,
+    position: item.position,
+    ocrConfidence: Math.round(item.confidence),
+    ocrNeedsReview: item.confidence < OCR_CHORD_REVIEW_CONFIDENCE,
+  }));
+  const unique = chords.filter((item, index) =>
+    chords.findIndex((candidate) => candidate.chord === item.chord && candidate.position === item.position) === index,
+  );
+  return {
+    chords: unique,
+    reviewCount: unique.filter((item) => item.ocrNeedsReview).length,
+  };
+}
+
+function projectChordPositions(chords: ChordPlacement[], sourceLength: number, targetLength: number): ChordPlacement[] {
+  if (!chords.length || sourceLength <= 0 || targetLength <= 0) return chords;
+  return chords.map((item) => ({
+    ...item,
+    position: Math.min(targetLength, Math.max(0, Math.round((item.position / sourceLength) * targetLength))),
+  }));
+}
 
 function sectionFromHeading(text: string): { type: SongSectionType; label: string } | null {
   const normalized = text.trim().replace(/^[\[({]|[\])}]$/g, "").replace(/\s+/g, " ");
