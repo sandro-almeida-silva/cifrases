@@ -69,6 +69,7 @@ export type SongTimeline = {
 export type SongOcrMetadata = {
   confidence: number;
   lowConfidenceCount: number;
+  chordReviewCount?: number;
   processedAt: string;
   source: "image" | "pdf";
 };
