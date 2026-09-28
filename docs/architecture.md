@@ -1,25 +1,69 @@
 # Arquitetura
 
-A entidade `Song` é a fonte de verdade.
+## Princípio central
+
+`Song` é a fonte de verdade do produto.
+
+Catálogo, editor, player, sincronização, modo palco e apresentação devem consumir o mesmo contrato de música em vez de manter cópias paralelas.
 
 ```text
 Song
 ├── metadata
-├── arrangement
-├── content
+├── sections
+│   └── lines
+│       └── chords
 ├── media
-├── timeline
-└── presentations
+└── timeline
 ```
 
-O player do músico e o modo celebração são projeções diferentes da mesma música.
+## Fronteiras
 
-## Domínios
+### Domínio
 
-- songs
-- player
-- timeline
-- presentation
-- library
+Tipos e regras independentes de navegador, React e persistência.
 
-Contextos como paróquia, banda, comunidade ou evento entram por tema, categorias e configuração.
+### Aplicação
+
+Orquestra leitura e escrita de músicas, validações, importação e timeline.
+
+### Persistência e mídia
+
+A persistência deve ser acessada por repository/service. A UI não conhece detalhes do armazenamento. Binários de mídia são referências externas ao registro principal.
+
+### UI
+
+Os modos de uso são projeções do mesmo domínio:
+
+- Biblioteca
+- Detalhes/preparação
+- Editor
+- Player
+- Apresentação 16:9
+- Modo palco
+
+## Fluxo
+
+```text
+Biblioteca
+   ↓
+Música
+   ├── Editar → Editor → Persistência
+   ├── Tocar → Player → Áudio + Timeline + Auto-scroll
+   ├── Apresentar → Modo 16:9
+   └── Modo palco → Teleprompter musical
+```
+
+## Contextos
+
+Paróquia, banda, comunidade, evento ou outro contexto entram por tema e configuração, sem acoplamento ao domínio musical.
+
+## Regras de engenharia
+
+- Server Components por padrão.
+- Client Components apenas quando estado, eventos ou APIs do navegador forem necessários.
+- Usar `next/link` e `next/image`.
+- Preservar `typedRoutes`.
+- Evitar configuração customizada sem necessidade comprovada.
+- Testar regras de domínio sem navegador.
+
+Consulte [Domínio](domain.md) e [Formato de música](song-format.md).
