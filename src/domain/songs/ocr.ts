@@ -110,10 +110,13 @@ function buildSections(lines: OcrLine[]) {
   let current: SongSection = { id: `ocr-section-${Date.now()}`, type: "verse", label: "Verso", lines: [] };
   const confidenceValues: number[] = [];
   let lowConfidenceCount = 0;
+  let pendingChords: ChordPlacement[] = [];
+  let pendingSourceLength = 0;
 
   for (const [index, item] of lines.entries()) {
-    const text = item.text.trim().replace(/[ \t]+/g, " ");
+    const text = item.text.trim().replace(/[ \\t]+/g, " ");
     if (!text) continue;
+
     const heading = sectionFromHeading(text);
     if (heading) {
       if (current.lines.length) sections.push(current);
@@ -123,12 +126,31 @@ function buildSections(lines: OcrLine[]) {
         label: heading.label,
         lines: [],
       };
+      pendingChords = [];
+      pendingSourceLength = 0;
       continue;
     }
+
+    const recognized = recognizeChords(item.text, item.words);
+    const tokens = text.split(/\\s+/).filter(Boolean);
+    const chordOnly = tokens.length > 0 && recognized.chords.length === tokens.length;
+
+    if (chordOnly) {
+      pendingChords = recognized.chords;
+      pendingSourceLength = Math.max(text.length - 1, 1);
+      continue;
+    }
+
+    const chords = pendingChords.length
+      ? projectChordPositions(pendingChords, pendingSourceLength, Math.max(text.length - 1, 1))
+      : recognized.chords;
+    pendingChords = [];
+    pendingSourceLength = 0;
+
     current.lines.push({
       id: `ocr-line-${Date.now()}-${index}`,
       text,
-      chords: [],
+      chords,
       ocrConfidence: Math.round(item.confidence),
     });
     confidenceValues.push(item.confidence);
@@ -154,6 +176,33 @@ function buildSections(lines: OcrLine[]) {
   };
 }
 
+()}-${index}`,
+      text,
+      chords,
+      ocrConfidence: Math.round(item.confidence),
+    });
+    confidenceValues.push(item.confidence);
+    if (item.confidence < OCR_LOW_CONFIDENCE) lowConfidenceCount += 1;
+  }
+
+  if (current.lines.length) sections.push(current);
+  if (!sections.length) {
+    sections.push({
+      id: `ocr-section-${Date.now()}-0`,
+      type: "verse",
+      label: "Verso",
+      lines: [{ id: `ocr-line-${Date.now()}-0`, text: "", chords: [] }],
+    });
+  }
+
+  return {
+    sections,
+    confidence: confidenceValues.length
+      ? Math.round(confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length)
+      : 0,
+    lowConfidenceCount,
+  };
+}
 async function recognizeImage(blob: Blob, onProgress?: (progress: OcrProgress) => void): Promise<OcrLine[]> {
   const worker = await createWorker("por", 1, {
     logger: (message) => {
@@ -165,92 +214,21 @@ async function recognizeImage(blob: Blob, onProgress?: (progress: OcrProgress) =
 
   try {
     const result = await worker.recognize(blob, {}, { blocks: true });
-    const lines = (result.data.blocks ?? []).flatMap((block) =>
+    return (result.data.blocks ?? []).flatMap((block) =>
       block.paragraphs.flatMap((paragraph) =>
-        paragraph.lines.map((line) => ({ text: line.text, confidence: line.confidence })),
+        paragraph.lines.map((line) => ({
+          text: line.text,
+          confidence: line.confidence,
+          words: line.words.map((word) => ({
+            text: word.text,
+            confidence: word.confidence,
+          })),
+        })),
       ),
     );
-    return lines;
   } finally {
     await worker.terminate();
   }
 }
 
-async function renderPdfPages(file: Blob): Promise<Blob[]> {
-  const pdfjs = await import("pdfjs-dist");
-  const loadingTask = pdfjs.getDocument({
-    data: new Uint8Array(await file.arrayBuffer()),
-    disableAutoFetch: true,
-    disableStream: true,
-  });
-  const pdfDocument = await loadingTask.promise;
 
-  if (pdfDocument.numPages > MAX_PDF_PAGES) {
-    await loadingTask.destroy();
-    throw new Error(`O PDF excede o limite de ${MAX_PDF_PAGES} páginas para OCR.`);
-  }
-
-  const images: Blob[] = [];
-  try {
-    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
-      const page = await pdfDocument.getPage(pageNumber);
-      const baseViewport = page.getViewport({ scale: 1 });
-      const scale = Math.min(1.75, MAX_RENDER_WIDTH / baseViewport.width);
-      const viewport = page.getViewport({ scale: Math.max(scale, 1) });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("Não foi possível preparar a página do PDF para OCR.");
-      await page.render({ canvas, canvasContext: context, viewport }).promise;
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((value: Blob | null) => {
-          if (value) resolve(value);
-          else reject(new Error("Não foi possível preparar a página do PDF para OCR."));
-        }, "image/png");
-      });
-      images.push(blob);
-      page.cleanup();
-    }
-  } finally {
-    await loadingTask.destroy();
-  }
-  return images;
-}
-
-export async function extractSongFromOriginal(
-  file: Blob,
-  mimeType: string,
-  onProgress?: (progress: OcrProgress) => void,
-): Promise<OcrExtraction> {
-  onProgress?.({ stage: "preparing", progress: 0 });
-  const source = mimeType === "application/pdf" ? "pdf" : "image";
-  let lines: OcrLine[] = [];
-
-  if (source === "pdf") {
-    const pages = await renderPdfPages(file);
-    for (const [index, page] of pages.entries()) {
-      const pageLines = await recognizeImage(page, (progress) => {
-        const base = index / pages.length;
-        onProgress?.({
-          stage: progress.stage,
-          progress: Math.round((base + progress.progress / 100 / pages.length) * 100),
-        });
-      });
-      lines = [...lines, ...pageLines];
-    }
-  } else {
-    lines = await recognizeImage(file, onProgress);
-  }
-
-  onProgress?.({ stage: "finalizing", progress: 100 });
-  const built = buildSections(lines);
-  return {
-    ...built,
-    chordReviewCount: built.sections
-      .flatMap((section) => section.lines)
-      .flatMap((line) => line.chords ?? [])
-      .filter((chord) => chord.ocrNeedsReview).length,
-    source,
-  };
-}
