@@ -92,7 +92,19 @@ Qualquer alteração fora desses padrões faz o pipeline executar a validação 
 
 A regra é conservadora: se houver dúvida, o pipeline pesado é executado.
 
-## 11. Definition of Done
+## 11. Gate de validação e espera
+
+Para alterações de código, a validação deve ocorrer em duas camadas:
+
+1. Antes do Pull Request, executar localmente `pnpm check` e `pnpm test:e2e` quando o ambiente permitir.
+2. Depois do push/PR, identificar o workflow pelo `head_sha` exato e aguardar a conclusão dos jobs.
+3. Não fazer merge enquanto **Quality** e **E2E** não estiverem ambos em `success`.
+4. Um rerun pertence ao commit da execução original. Uma correção em outro commit exige esperar a nova execução desse novo commit.
+5. Quando um job falhar, ler os logs, corrigir a causa, fazer novo commit e aguardar novamente os gates. Não avançar apenas porque uma execução anterior passou.
+6. Para alterações pequenas de código, priorizar testes locais direcionados além da suíte completa; o pipeline remoto continua sendo o gate final.
+
+Esse mecanismo evita encerrar issues ou seguir para a próxima issue com CI/E2E pendentes ou executando um snapshot antigo.
+## 12. Definition of Done
 
 - Issue vinculada.
 - Classificação correta.
