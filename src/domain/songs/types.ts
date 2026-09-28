@@ -16,6 +16,7 @@ export type SongLine = {
   id: string;
   text: string;
   chords?: ChordPlacement[];
+  ocrConfidence?: number;
 };
 
 export type SongSection = {
