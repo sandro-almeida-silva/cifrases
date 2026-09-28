@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.17.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.16.0...v1.17.0) (2026-09-28)
+
+
+### Features
+
+* **import:** import image and PDF as reviewable draft ([#15](https://github.com/sandro-almeida-silva/cifrases/issues/15)) ([58cded7](https://github.com/sandro-almeida-silva/cifrases/commit/58cded7e22ec0f10ea0c8b99cb6e431dc7a2014e))
+
 # [1.16.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.15.0...v1.16.0) (2026-09-28)
 
 
