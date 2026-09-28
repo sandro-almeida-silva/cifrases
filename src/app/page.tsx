@@ -643,32 +643,6 @@ export default function HomePage() {
     }
   }
 
-  function importJson(file: File) {
-    void file
-      .text()
-      .then((text) => {
-        const parsed: unknown = JSON.parse(text);
-        const list = Array.isArray(parsed) ? parsed : [parsed];
-        const valid = list.filter((item): item is Song => Boolean(
-          item && typeof item === "object" &&
-          typeof (item as Partial<Song>).id === "string" &&
-          typeof (item as Partial<Song>).title === "string" &&
-          Array.isArray((item as Partial<Song>).sections),
-        ));
-        if (!valid.length) throw new Error("Nenhuma música válida encontrada.");
-        setSongs((state) => {
-          const map = new Map(state.map((item) => [item.id, item]));
-          valid.forEach((item) => {
-            map.set(item.id, item);
-          });
-          return [...map.values()];
-        });
-        setImportMessage(`${valid.length} música(s) importada(s).`);
-      })
-      .catch((error: unknown) => {
-        setImportMessage(error instanceof Error ? error.message : "Falha na importação.");
-      });
-  }
 
   function exportJson() {
     const blob = new Blob([JSON.stringify(songs, null, 2)], { type: "application/json" });
@@ -766,7 +740,6 @@ export default function HomePage() {
           onDelete={deleteSong}
           onFavorite={toggleFavorite}
           onNew={startNew}
-          onImport={importJson}
           onImportOriginal={importOriginalFile}
           importMessage={importMessage}
         />
@@ -1029,7 +1002,6 @@ function LibraryView({
   onDelete: (id: string) => void;
   onFavorite: (id: string) => void;
   onNew: () => void;
-  onImport: (file: File) => void;
   onImportOriginal: (file: File) => void;
   importMessage: string;
 }) {
