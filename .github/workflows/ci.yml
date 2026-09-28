@@ -8,20 +8,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/setup@v2
         with:
-          version: 10.16.1
-          run_install: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          package-manager-cache: false
+          version: 11.28.0
+          runtime: node@24
+          install: false
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm check
 
@@ -31,14 +32,18 @@ jobs:
     needs: quality
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/setup@v2
         with:
-          version: 10.16.1
-          run_install: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          package-manager-cache: false
+          version: 11.28.0
+          runtime: node@24
+          install: false
       - run: pnpm install --no-frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

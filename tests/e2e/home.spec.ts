@@ -405,19 +405,36 @@ test.describe("Cifrases", () => {
 });
 
   test("controls synchronized auto-scroll without taking over manual reading", async ({ page }, testInfo) => {
+    await page.addInitScript((song) => {
+      window.localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+    }, seededSong);
+
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
+    await expect(page.getByText("Primeira Canção")).toBeVisible();
+
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
       await page.locator('button[title="Biblioteca"]').click();
+      await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     }
-    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+
+    const openButton = page.getByRole("button", { name: "Abrir Primeira Canção" });
+    await expect(openButton).toBeVisible();
+    await openButton.click();
+
+    await expect(page.getByText("Detalhes da música", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
+
     await expect(page.getByText("Rolagem automática")).toBeVisible();
     await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Pausar" }).click();
     await expect(page.getByRole("button", { name: "Retomar" })).toHaveAttribute("aria-pressed", "false");
     await page.getByRole("button", { name: "Retomar" }).click();
     await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Auto-scroll off" }).click();
+
+    await page.getByRole("button", { name: "Auto-scroll on" }).click();
+    await expect(page.getByRole("button", { name: "Auto-scroll off" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Desativada" })).toBeDisabled();
   });
