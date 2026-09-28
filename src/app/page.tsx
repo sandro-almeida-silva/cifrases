@@ -1262,6 +1262,7 @@ function PlayerView({
   transpose,
   preferences,
   activeLineId,
+  autoScrollPaused,
   activeSectionId,
   timelineSynced,
   currentSecond,
