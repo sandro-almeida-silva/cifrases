@@ -44,6 +44,15 @@ Prefira locators de acessibilidade como `getByRole`, `getByLabel` e `getByText`.
 - Jornada de usuário: ATDD + E2E.
 - Correção de bug: teste de regressão sempre que reproduzível.
 
+## Regras para E2E
+
+- Cada cenário deve preparar seu próprio estado inicial.
+- Não depender de estado persistido por outros testes.
+- Validar explicitamente o estado da UI antes de executar ações dependentes dele.
+- Diferenciar controles de pausa/retomada de controles de ativação/desativação.
+- Considerar execução paralela e múltiplos projetos Playwright.
+- Preferir locators de acessibilidade.
+
 ## Validação
 
 ```bash
@@ -59,5 +68,7 @@ Ou:
 ```bash
 pnpm check
 ```
+
+Para PRs exclusivamente documentais, o CI usa um caminho rápido que valida o diff sem instalar dependências nem executar a suíte pesada.
 
 Nenhuma alteração deve desabilitar typecheck ou contornar os testes para obter um build verde.
