@@ -33,7 +33,11 @@ import {
   cloneSong,
   createSongId,
   defaultPlayerPreferences,
+  deleteOriginalImport,
   loadEditorAutosave,
+  loadOriginalImport,
+  saveOriginalImport,
+  validateOriginalImport,
   loadLibraryState,
   loadSongs,
   resolveMediaUrl,
@@ -151,9 +155,42 @@ export default function HomePage() {
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
+  const [draftOriginalName, setDraftOriginalName] = useState<string | null>(null);
+  const [draftOriginalError, setDraftOriginalError] = useState("");
   const [editorAutosaveStatus, setEditorAutosaveStatus] = useState<"idle" | "saved" | "recovered">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const draftDirty = Boolean(draft && draftOriginal && JSON.stringify(draft) !== JSON.stringify(draftOriginal));
+
+  useEffect(() => {
+    if (!draft?.media?.original?.id) {
+      setDraftOriginalUrl(null);
+      setDraftOriginalName(null);
+      setDraftOriginalError("");
+      return;
+    }
+
+    let active = true;
+    void loadOriginalImport(draft.media.original.id)
+      .then((blob) => {
+        if (!active || !blob) return;
+        setDraftOriginalUrl(URL.createObjectURL(blob));
+        setDraftOriginalName(draft.media?.original?.name ?? "arquivo original");
+      })
+      .catch(() => {
+        if (active) setDraftOriginalError("Não foi possível carregar o arquivo original do rascunho.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draft?.media?.original?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (draftOriginalUrl) URL.revokeObjectURL(draftOriginalUrl);
+    };
+  }, [draftOriginalUrl]);
 
   useEffect(() => {
     try {
@@ -306,6 +343,9 @@ export default function HomePage() {
 
   function startNew() {
     const next = emptySong();
+    setDraftOriginalUrl(null);
+    setDraftOriginalName(null);
+    setDraftOriginalError("");
     setDraft(next);
     setDraftOriginal(cloneSong(next));
     setDraftMode("create");
@@ -316,6 +356,7 @@ export default function HomePage() {
 
   function startEdit(item: Song) {
     const next = cloneSong(item);
+    setDraftOriginalError("");
     setDraft(next);
     setDraftOriginal(cloneSong(next));
     setDraftMode("edit");
@@ -367,6 +408,9 @@ export default function HomePage() {
       return exists ? state.map((item) => (item.id === next.id ? next : item)) : [next, ...state];
     });
     setSelectedId(next.id);
+    if (draftMode === "create" && draft.media?.original?.id) {
+      void deleteOriginalImport(draft.media.original.id).catch(() => undefined);
+    }
     clearEditorAutosave();
     setEditorAutosaveStatus("idle");
     setDraft(null);
@@ -408,6 +452,9 @@ export default function HomePage() {
   function deleteSong(id: string) {
     const item = songs.find((songItem) => songItem.id === id);
     if (!item || !window.confirm(`Excluir "${item.title}"?`)) return;
+    if (item.media?.original?.id) {
+      void deleteOriginalImport(item.media.original.id).catch(() => undefined);
+    }
     setSongs((state) => state.filter((songItem) => songItem.id !== id));
     setLibrary((state) => ({
       ...state,
@@ -567,6 +614,36 @@ export default function HomePage() {
       });
   }
 
+  async function importOriginalFile(file: File) {
+    setImportMessage("");
+    setDraftOriginalError("");
+
+    try {
+      const validation = await validateOriginalImport(file);
+      const mediaRef = await saveOriginalImport(file, validation);
+      const next = emptySong();
+      const titleFromFilename = file.name.replace(/\.[^.]+$/, "").trim().slice(0, 120);
+
+      next.title = titleFromFilename;
+      next.media = { ...next.media, original: mediaRef };
+
+      setDraft(next);
+      setDraftOriginal(cloneSong(next));
+      setDraftMode("create");
+      saveEditorAutosave({ song: cloneSong(next), mode: "create", savedAt: new Date().toISOString() });
+      setDraftErrors({});
+      setDraftOriginalName(file.name.slice(0, 120));
+      setDraftOriginalUrl(URL.createObjectURL(file));
+      setEditorAutosaveStatus("idle");
+      setSelectedId(next.id);
+      setView("editor");
+      setImportMessage("Arquivo importado como rascunho. Revise o conteúdo antes de salvar.");
+    } catch (error: unknown) {
+      setImportMessage(error instanceof Error ? error.message : "Falha ao importar o arquivo.");
+    }
+  }
+
+
   function exportJson() {
     const blob = new Blob([JSON.stringify(songs, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -663,7 +740,8 @@ export default function HomePage() {
           onDelete={deleteSong}
           onFavorite={toggleFavorite}
           onNew={startNew}
-          onImport={importJson}
+          onImportOriginal={importOriginalFile}
+          importMessage={importMessage}
         />
       ) : null}
 
@@ -683,6 +761,9 @@ export default function HomePage() {
           onRemoveLine={removeLine}
           onMoveLine={moveLine}
           onAttachAudio={attachAudio}
+          originalPreviewUrl={draftOriginalUrl}
+          originalFileName={draftOriginalName}
+          originalError={draftOriginalError}
           onBuildTimeline={buildTimeline}
           autosaveStatus={editorAutosaveStatus}
           onTimelineUpdate={(patch) => updateDraft((current) => ({ ...current, timeline: { ...(current.timeline ?? { events: [] }), ...patch } }))}
@@ -903,7 +984,8 @@ function LibraryView({
   onDelete,
   onFavorite,
   onNew,
-  onImport,
+  onImportOriginal,
+  importMessage,
 }: {
   songs: Song[];
   totalSongs: number;
@@ -921,7 +1003,8 @@ function LibraryView({
   onDelete: (id: string) => void;
   onFavorite: (id: string) => void;
   onNew: () => void;
-  onImport: (file: File) => void;
+  onImportOriginal: (file: File) => void;
+  importMessage: string;
 }) {
   return (
     <section>
@@ -934,15 +1017,16 @@ function LibraryView({
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onNew}>Nova</button>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
-            <Upload size={15} /> Importar
-            <input className="hidden" type="file" accept=".json,application/json" onChange={(event) => {
+            <Upload size={15} /> Importar cifra
+            <input className="hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) onImport(file);
+              if (file) onImportOriginal(file);
               event.currentTarget.value = "";
             }} />
           </label>
         </div>
       </div>
+      {importMessage ? <p className="mt-3 text-xs text-muted" role="status">{importMessage}</p> : null}
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Select
@@ -1044,6 +1128,9 @@ function EditorView({
   onRemoveLine,
   onMoveLine,
   onAttachAudio,
+  originalPreviewUrl,
+  originalFileName,
+  originalError,
   onBuildTimeline,
   autosaveStatus,
   onTimelineUpdate,
@@ -1062,6 +1149,9 @@ function EditorView({
   onRemoveLine: (sectionId: string, lineId: string) => void;
   onMoveLine: (sectionId: string, lineId: string, direction: -1 | 1) => void;
   onAttachAudio: (file: File) => void;
+  originalPreviewUrl: string | null;
+  originalFileName: string | null;
+  originalError: string;
   onBuildTimeline: () => void;
   autosaveStatus: "idle" | "saved" | "recovered";
   onTimelineUpdate: (patch: Partial<Song["timeline"]>) => void;
@@ -1097,6 +1187,16 @@ function EditorView({
           <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white" onClick={onSave}><Save size={15} /> Salvar</button>
         </div>
       </div>
+
+      {song.media?.original ? (
+        <OriginalImportPreview
+          url={originalPreviewUrl}
+          fileName={originalFileName}
+          mimeType={song.media.original.mimeType}
+          size={song.media.original.size}
+          error={originalError}
+        />
+      ) : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {[
@@ -1212,6 +1312,61 @@ function EditorView({
         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBuildTimeline}><AudioLines size={15} /> Timeline inicial</button>
       </div>
     </section>
+  );
+}
+
+function OriginalImportPreview({
+  url,
+  fileName,
+  mimeType,
+  size,
+  error,
+}: {
+  url: string | null;
+  fileName: string | null;
+  mimeType: string;
+  size: number;
+  error: string;
+}) {
+  return (
+    <div className="mt-6 rounded-2xl border border-brand/20 bg-brand/5 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold">Arquivo original</p>
+          <p className="mt-1 text-xs text-muted">{fileName || "Arquivo importado"} · {(size / 1024 / 1024).toFixed(2)} MB</p>
+        </div>
+        <span className="rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Revisão obrigatória</span>
+      </div>
+
+      {error ? <p role="alert" className="mt-3 text-xs text-red-300">{error}</p> : null}
+      {!error && url ? (
+        mimeType === "application/pdf" ? (
+          <iframe
+            className="mt-4 h-[520px] w-full rounded-xl border border-white/10 bg-white"
+            src={url}
+            title="Pré-visualização do arquivo original"
+            sandbox=""
+          />
+        ) : (
+          <div className="mt-4 overflow-auto rounded-xl border border-white/10 bg-black/20 p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt={fileName ? `Pré-visualização de ${fileName}` : "Pré-visualização da cifra importada"}
+              className="mx-auto max-h-[520px] max-w-full rounded-lg object-contain"
+            />
+          </div>
+        )
+      ) : (
+        <div role="status" className="mt-4 rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-muted">
+          Carregando pré-visualização...
+        </div>
+      )}
+
+      <p className="mt-3 text-xs text-muted">
+        A imagem/PDF é apenas a fonte original. O conteúdo extraído deverá ser revisado antes da publicação.
+      </p>
+    </div>
   );
 }
 

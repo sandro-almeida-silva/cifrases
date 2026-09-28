@@ -4,6 +4,143 @@ export const SONGS_STORAGE_KEY = "cifrases:songs:v1";
 export const LIBRARY_STORAGE_KEY = "cifrases:library:v1";
 export const MEDIA_STORAGE_PREFIX = "cifrases:media:v1";
 export const EDITOR_AUTOSAVE_STORAGE_KEY = "cifrases:editor-autosave:v1";
+export const ORIGINAL_IMPORT_DB_NAME = "cifrases-original-imports";
+export const ORIGINAL_IMPORT_STORE = "files";
+export const ORIGINAL_IMPORT_MAX_SIZE = 10 * 1024 * 1024;
+
+export type OriginalImportValidation = {
+  mimeType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp";
+  extension: "pdf" | "jpg" | "jpeg" | "png" | "webp";
+};
+
+function readFileBytes(file: File, length: number): Promise<Uint8Array> {
+  return file.slice(0, length).arrayBuffer().then((buffer) => new Uint8Array(buffer));
+}
+
+function hasPrefix(bytes: Uint8Array, prefix: number[]): boolean {
+  return prefix.every((value, index) => bytes[index] === value);
+}
+
+export async function validateOriginalImport(file: File): Promise<OriginalImportValidation> {
+  if (file.size <= 0) throw new Error("O arquivo está vazio.");
+  if (file.size > ORIGINAL_IMPORT_MAX_SIZE) throw new Error("O arquivo excede o limite de 10 MB.");
+
+  const filename = file.name.trim();
+  const extension = filename.toLowerCase().split(".").pop() ?? "";
+  const allowedExtensions = new Set(["pdf", "jpg", "jpeg", "png", "webp"]);
+  if (!allowedExtensions.has(extension)) {
+    throw new Error("Formato não permitido. Use PDF, JPG, PNG ou WEBP.");
+  }
+
+  const bytes = await readFileBytes(file, 12);
+  let mimeType: OriginalImportValidation["mimeType"] | null = null;
+
+  if (hasPrefix(bytes, [0x25, 0x50, 0x44, 0x46, 0x2d])) {
+    mimeType = "application/pdf";
+  } else if (hasPrefix(bytes, [0xff, 0xd8, 0xff])) {
+    mimeType = "image/jpeg";
+  } else if (hasPrefix(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+    mimeType = "image/png";
+  } else if (
+    hasPrefix(bytes, [0x52, 0x49, 0x46, 0x46]) &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    mimeType = "image/webp";
+  }
+
+  if (!mimeType) throw new Error("O conteúdo do arquivo não corresponde a um formato suportado.");
+
+  const extensionMatches =
+    (mimeType === "application/pdf" && extension === "pdf") ||
+    (mimeType === "image/jpeg" && (extension === "jpg" || extension === "jpeg")) ||
+    (mimeType === "image/png" && extension === "png") ||
+    (mimeType === "image/webp" && extension === "webp");
+
+  if (!extensionMatches) {
+    throw new Error("A extensão do arquivo não corresponde ao conteúdo identificado.");
+  }
+
+  return {
+    mimeType,
+    extension: extension as OriginalImportValidation["extension"],
+  };
+}
+
+function openOriginalImportDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.indexedDB) {
+      reject(new Error("O armazenamento local de arquivos não está disponível neste navegador."));
+      return;
+    }
+
+    const request = window.indexedDB.open(ORIGINAL_IMPORT_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(ORIGINAL_IMPORT_STORE)) {
+        request.result.createObjectStore(ORIGINAL_IMPORT_STORE);
+      }
+    };
+    request.onerror = () => reject(new Error("Não foi possível abrir o armazenamento local de arquivos."));
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => db.close();
+      resolve(db);
+    };
+  });
+}
+
+export async function saveOriginalImport(file: File, validation: OriginalImportValidation): Promise<SongMediaRef> {
+  const id = globalThis.crypto?.randomUUID?.() ?? `original-${Date.now()}`;
+  const db = await openOriginalImportDb();
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(ORIGINAL_IMPORT_STORE, "readwrite");
+    transaction.objectStore(ORIGINAL_IMPORT_STORE).put(file, id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(new Error("Não foi possível armazenar o arquivo original."));
+    transaction.onabort = () => reject(new Error("O armazenamento do arquivo original foi interrompido."));
+  }).finally(() => db.close());
+
+  return {
+    id,
+    kind: "original",
+    path: `indexeddb://${ORIGINAL_IMPORT_STORE}/${id}`,
+    mimeType: validation.mimeType,
+    size: file.size,
+    name: file.name.trim().slice(0, 120),
+  };
+}
+
+export async function loadOriginalImport(id: string): Promise<Blob | null> {
+  const db = await openOriginalImportDb();
+  return new Promise<Blob | null>((resolve, reject) => {
+    const transaction = db.transaction(ORIGINAL_IMPORT_STORE, "readonly");
+    const request = transaction.objectStore(ORIGINAL_IMPORT_STORE).get(id);
+    request.onsuccess = () => {
+      const value = request.result;
+      resolve(value instanceof Blob ? value : null);
+    };
+    request.onerror = () => reject(new Error("Não foi possível carregar o arquivo original."));
+    transaction.oncomplete = () => db.close();
+    transaction.onabort = () => {
+      db.close();
+      reject(new Error("A leitura do arquivo original foi interrompida."));
+    };
+  });
+}
+
+export async function deleteOriginalImport(id: string): Promise<void> {
+  const db = await openOriginalImportDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(ORIGINAL_IMPORT_STORE, "readwrite");
+    transaction.objectStore(ORIGINAL_IMPORT_STORE).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(new Error("Não foi possível remover o arquivo original."));
+    transaction.onabort = () => reject(new Error("A remoção do arquivo original foi interrompida."));
+  }).finally(() => db.close());
+}
 
 export type EditorAutosave = {
   song: Song;

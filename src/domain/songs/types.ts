@@ -33,6 +33,7 @@ export type SongMediaRef = {
   path: string;
   mimeType: string;
   size: number;
+  name?: string;
 };
 
 export type SongMediaLegacy = {
