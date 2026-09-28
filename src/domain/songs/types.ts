@@ -10,6 +10,8 @@ export type SongSectionType =
 export type ChordPlacement = {
   chord: string;
   position: number;
+  ocrConfidence?: number;
+  ocrNeedsReview?: boolean;
 };
 
 export type SongLine = {
