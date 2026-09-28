@@ -43,7 +43,7 @@ import {
 } from "@/domain/songs/repository";
 import { resolveTimelineEvent } from "@/domain/songs/timeline";
 import { transposeChord, transposeKey } from "@/domain/songs/transpose";
-import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType } from "@/domain/songs/types";
+import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType, SongTimelineEvent } from "@/domain/songs/types";
 
 type View = "library" | "editor" | "detail" | "player" | "presentation" | "settings";
 type SortMode = "title" | "artist" | "recent";
@@ -1139,6 +1139,179 @@ function EditorView({
         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBuildTimeline}><AudioLines size={15} /> Timeline inicial</button>
       </div>
     </section>
+  );
+}
+
+function TimelineEditor({
+  song,
+  onUpdate,
+}: {
+  song: Song;
+  onUpdate: (patch: Partial<Song>) => void;
+}) {
+  const timeline = song.timeline ?? { bpm: song.bpm, timeSignature: [4, 4] as [number, number], events: [] };
+  const events = [...timeline.events].sort((a, b) => a.atMs - b.atMs);
+
+  function updateTimeline(patch: Partial<Song["timeline"]>) {
+    onUpdate({ timeline: { ...timeline, ...patch, events: patch.events ?? timeline.events } });
+  }
+
+  function addEvent(sectionId: string, lineId?: string) {
+    const last = events.at(-1);
+    const nextAtMs = (last?.atMs ?? -1000) + 1000;
+    updateTimeline({
+      events: [
+        ...timeline.events,
+        { atMs: nextAtMs, sectionId, lineId },
+      ],
+    });
+  }
+
+  function updateEvent(index: number, patch: Partial<SongTimelineEvent>) {
+    const next = events.map((event, eventIndex) => (eventIndex === index ? { ...event, ...patch } : event));
+    updateTimeline({ events: next });
+  }
+
+  function removeEvent(index: number) {
+    updateTimeline({ events: events.filter((_, eventIndex) => eventIndex !== index) });
+  }
+
+  const sectionOptions = song.sections.flatMap((section) =>
+    section.lines.length
+      ? section.lines.map((line) => ({
+          value: `${section.id}::${line.id}`,
+          label: `${sectionName(section)} · ${line.text || "Linha"}`,
+          sectionId: section.id,
+          lineId: line.id,
+        }))
+      : [{ value: section.id, label: sectionName(section), sectionId: section.id }],
+  );
+
+  return (
+    <div className="mt-5 rounded-2xl border border-white/10 bg-surface p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="font-semibold">Timeline visual</p>
+          <p className="mt-1 text-xs text-muted">Ajuste eventos em milissegundos, BPM e compasso. Eventos são ordenados pela posição temporal.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className="text-xs text-muted">
+            BPM
+            <input
+              className={`${inputClass} mt-1 w-28`}
+              type="number"
+              min={1}
+              max={300}
+              value={timeline.bpm ?? ""}
+              onChange={(event) => updateTimeline({ bpm: event.target.value ? Number(event.target.value) : undefined })}
+              aria-label="BPM da timeline"
+            />
+          </label>
+          <label className="text-xs text-muted">
+            Compasso
+            <select
+              className={`${inputClass} mt-1 w-28`}
+              value={`${timeline.timeSignature?.[0] ?? 4}/${timeline.timeSignature?.[1] ?? 4}`}
+              onChange={(event) => {
+                const [numerator, denominator] = event.target.value.split("/").map(Number);
+                updateTimeline({ timeSignature: [numerator, denominator] });
+              }}
+              aria-label="Fórmula de compasso"
+            >
+              <option value="2/4">2/4</option>
+              <option value="3/4">3/4</option>
+              <option value="4/4">4/4</option>
+              <option value="6/8">6/8</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <div className="min-w-[760px] rounded-xl border border-white/10 bg-background p-3">
+          <div className="relative h-12">
+            <div className="absolute inset-x-0 top-6 h-px bg-white/10" />
+            {events.map((event, index) => {
+              const maxAt = Math.max(events.at(-1)?.atMs ?? 1000, 1000);
+              const left = Math.min(96, Math.max(4, (event.atMs / maxAt) * 92 + 4));
+              return (
+                <button
+                  key={`${event.sectionId}-${event.lineId ?? "section"}-${event.atMs}`}
+                  type="button"
+                  className="absolute top-2 -translate-x-1/2"
+                  style={{ left: `${left}%` }}
+                  onClick={() => document.getElementById(`timeline-event-${index}`)?.scrollIntoView({ block: "nearest" })}
+                  aria-label={`Evento em ${event.atMs} milissegundos`}
+                >
+                  <span className="block size-3 rounded-full bg-brand ring-4 ring-brand/10" />
+                </button>
+              );
+            })}
+          </div>
+          {events.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nenhum evento criado.</p> : null}
+          <div className="mt-3 space-y-2">
+            {events.map((event, index) => {
+              const selectedValue = event.lineId ? `${event.sectionId}::${event.lineId}` : event.sectionId;
+              return (
+                <div id={`timeline-event-${index}`} key={`${event.sectionId}-${event.lineId ?? "section"}-${index}`} className="grid gap-2 rounded-xl border border-white/10 p-3 md:grid-cols-[150px_1fr_1fr_auto]">
+                  <label className="text-xs text-muted">
+                    Tempo (ms)
+                    <input
+                      className={`${inputClass} mt-1`}
+                      type="number"
+                      min={0}
+                      value={event.atMs}
+                      onChange={(input) => updateEvent(index, { atMs: Math.max(0, Number(input.target.value) || 0) })}
+                      aria-label={`Tempo do evento ${index + 1}`}
+                    />
+                  </label>
+                  <label className="text-xs text-muted">
+                    Seção / linha
+                    <select
+                      className={`${inputClass} mt-1`}
+                      value={selectedValue}
+                      onChange={(input) => {
+                        const match = sectionOptions.find((option) => option.value === input.target.value);
+                        if (match) updateEvent(index, { sectionId: match.sectionId, lineId: match.lineId });
+                      }}
+                      aria-label={`Destino do evento ${index + 1}`}
+                    >
+                      {sectionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs text-muted">
+                    Acorde
+                    <input
+                      className={`${inputClass} mt-1`}
+                      value={event.chord ?? ""}
+                      onChange={(input) => updateEvent(index, { chord: input.target.value || undefined })}
+                      placeholder="Ex.: G"
+                      aria-label={`Acorde do evento ${index + 1}`}
+                    />
+                  </label>
+                  <button type="button" className="self-end rounded-xl border border-white/10 px-3 py-2 text-sm hover:text-red-200" onClick={() => removeEvent(index)} aria-label={`Remover evento ${index + 1}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Select
+          value=""
+          options={[{ value: "", label: "Adicionar evento..." }, ...sectionOptions.map((option) => ({ value: option.value, label: option.label }))]}
+          onChange={(value) => {
+            const option = sectionOptions.find((item) => item.value === value);
+            if (option) addEvent(option.sectionId, option.lineId);
+          }}
+          ariaLabel="Adicionar evento à timeline"
+          className="min-w-64"
+        />
+      </div>
+    </div>
   );
 }
 
