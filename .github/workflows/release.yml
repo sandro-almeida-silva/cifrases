@@ -19,7 +19,7 @@ jobs:
       - uses: pnpm/setup@v2
         with:
           version: 11.28.0
-          node-version: 24
+          runtime: node@24
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm release
         env:
