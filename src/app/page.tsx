@@ -646,6 +646,7 @@ export default function HomePage() {
           preferences={playerPreferences}
           activeLineId={activeLineId}
           autoScrollPaused={autoScrollPaused}
+          onToggleAutoScrollPaused={() => setAutoScrollPaused((paused) => !paused)}
           activeSectionId={activeSectionId}
           timelineSynced={timelineSynced}
           currentSecond={currentSecond}
@@ -1263,6 +1264,7 @@ function PlayerView({
   preferences,
   activeLineId,
   autoScrollPaused,
+  onToggleAutoScrollPaused,
   activeSectionId,
   timelineSynced,
   currentSecond,
@@ -1294,6 +1296,7 @@ function PlayerView({
   preferences: typeof defaultPlayerPreferences;
   activeLineId: string | null;
   autoScrollPaused: boolean;
+  onToggleAutoScrollPaused: () => void;
   activeSectionId: string | null;
   timelineSynced: boolean;
   currentSecond: number;
@@ -1428,7 +1431,7 @@ function PlayerView({
           type="button"
           className="rounded-xl border border-white/10 px-3 py-1.5 font-semibold"
           aria-pressed={preferences.autoScroll && !autoScrollPaused}
-          onClick={() => setAutoScrollPaused((paused) => !paused)}
+          onClick={onToggleAutoScrollPaused}
           disabled={!preferences.autoScroll}
         >
           {preferences.autoScroll ? (autoScrollPaused ? "Retomar" : "Pausar") : "Desativada"}
