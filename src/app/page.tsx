@@ -165,6 +165,7 @@ export default function HomePage() {
     if (!draft?.media?.original?.id) {
       setDraftOriginalUrl(null);
       setDraftOriginalName(null);
+      setDraftOriginalError("");
       return;
     }
 
@@ -173,7 +174,7 @@ export default function HomePage() {
       .then((blob) => {
         if (!active || !blob) return;
         setDraftOriginalUrl(URL.createObjectURL(blob));
-        setDraftOriginalName(draft.media?.original?.path?.split("/").pop() ?? "arquivo original");
+        setDraftOriginalName(draft.media?.original?.name ?? "arquivo original");
       })
       .catch(() => {
         if (active) setDraftOriginalError("Não foi possível carregar o arquivo original do rascunho.");
@@ -1044,6 +1045,7 @@ function LibraryView({
           </label>
         </div>
       </div>
+      {importMessage ? <p className="mt-3 text-xs text-muted" role="status">{importMessage}</p> : null}
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Select
