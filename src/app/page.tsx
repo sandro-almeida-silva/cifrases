@@ -564,6 +564,7 @@ export default function HomePage() {
         ocr: {
           confidence: result.confidence,
           lowConfidenceCount: result.lowConfidenceCount,
+          chordReviewCount: result.chordReviewCount,
           processedAt: new Date().toISOString(),
           source: result.source,
         },
@@ -571,8 +572,8 @@ export default function HomePage() {
       setOcrState({
         status: "idle",
         progress: 100,
-        message: result.lowConfidenceCount
-          ? `OCR concluído com ${result.lowConfidenceCount} linha(s) de baixa confiança. Revise antes de salvar.`
+        message: result.lowConfidenceCount || result.chordReviewCount
+          ? `OCR concluído. ${result.lowConfidenceCount ? `${result.lowConfidenceCount} linha(s) de baixa confiança` : ""}${result.lowConfidenceCount && result.chordReviewCount ? " e " : ""}${result.chordReviewCount ? `${result.chordReviewCount} acorde(s) para revisar` : ""}. Revise antes de salvar.`
           : "OCR concluído. Revise a estrutura antes de salvar.",
       });
     } catch (error: unknown) {
@@ -1310,6 +1311,7 @@ function EditorView({
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="rounded-full bg-white/5 px-2.5 py-1 text-muted">Confiança média: {song.ocr.confidence}%</span>
               {song.ocr.lowConfidenceCount > 0 ? <span className="rounded-full bg-amber-400/10 px-2.5 py-1 text-amber-200">{song.ocr.lowConfidenceCount} linha(s) para revisar</span> : null}
+              {song.ocr.chordReviewCount ? <span className="rounded-full bg-amber-400/10 px-2.5 py-1 text-amber-200">{song.ocr.chordReviewCount} acorde(s) para revisar</span> : null}
             </div>
           ) : null}
         </div>
@@ -1378,13 +1380,20 @@ function EditorView({
                     />
                     {errors[`line-${item.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`line-${item.id}`]}</span> : null}
                   </div>
-                  <input
-                    className={`${inputClass} font-mono text-chord`}
-                    aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
-                    placeholder="G@0 C@20 D@35"
-                    value={chordText(item.chords)}
-                    onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, chords: parseChords(event.target.value) }))}
-                  />
+                  <div>
+                    {item.chords?.some((chord) => chord.ocrNeedsReview) ? (
+                      <span className="mb-1 inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
+                        Acorde(s) para revisar
+                      </span>
+                    ) : null}
+                    <input
+                      className={`${inputClass} font-mono text-chord`}
+                      aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
+                      placeholder="G@0 C@20 D@35"
+                      value={chordText(item.chords)}
+                      onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, chords: parseChords(event.target.value) }))}
+                    />
+                  </div>
                   <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, -1)} disabled={lineIndex === 0} aria-label={`Mover linha ${lineIndex + 1} para cima`}><ArrowUp size={14} /></button>
                   <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, 1)} disabled={lineIndex === section.lines.length - 1} aria-label={`Mover linha ${lineIndex + 1} para baixo`}><ArrowDown size={14} /></button>
                   <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
