@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.0...v1.14.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **production:** corrigir build do player ([461fa5c](https://github.com/sandro-almeida-silva/cifrases/commit/461fa5cdb30d8c01666e9d1c86604b129ce08e07)), closes [#51](https://github.com/sandro-almeida-silva/cifrases/issues/51)
+
 # [1.14.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.13.0...v1.14.0) (2026-09-28)
 
 
