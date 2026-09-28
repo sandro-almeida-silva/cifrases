@@ -42,8 +42,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          package-manager-cache: false
+      - run: pnpm install --no-frozen-lockfile
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
