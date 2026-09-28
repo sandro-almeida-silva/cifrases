@@ -984,7 +984,8 @@ function LibraryView({
   onDelete,
   onFavorite,
   onNew,
-  onImport,
+  onImportOriginal,
+  importMessage,
 }: {
   songs: Song[];
   totalSongs: number;
@@ -1127,6 +1128,9 @@ function EditorView({
   onRemoveLine,
   onMoveLine,
   onAttachAudio,
+  originalPreviewUrl,
+  originalFileName,
+  originalError,
   onBuildTimeline,
   autosaveStatus,
   onTimelineUpdate,
