@@ -406,12 +406,12 @@ test.describe("Cifrases", () => {
 
   test("controls synchronized auto-scroll without taking over manual reading", async ({ page }, testInfo) => {
     await page.addInitScript((song) => {
-      localStorage.clear();
-      localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+      window.localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
     }, seededSong);
 
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
+    await expect(page.getByText("Primeira Canção")).toBeVisible();
 
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
@@ -419,8 +419,12 @@ test.describe("Cifrases", () => {
       await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     }
 
-    await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
-    await expect(page.getByRole("heading", { name: "Detalhes da música" })).toBeVisible();
+    const openButton = page.getByRole("button", { name: "Abrir Primeira Canção" });
+    await expect(openButton).toBeVisible();
+    await openButton.click();
+
+    await expect(page.getByText("Detalhes da música", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
 
     await expect(page.getByText("Rolagem automática")).toBeVisible();
