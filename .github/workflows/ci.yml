@@ -21,8 +21,8 @@ jobs:
       - uses: pnpm/setup@v2
         with:
           version: 11.28.0
-          run_install: false
-          node-version: 24
+          runtime: node@24
+          install: false
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm check
 
@@ -35,8 +35,8 @@ jobs:
       - uses: pnpm/setup@v2
         with:
           version: 11.28.0
-          run_install: false
-          node-version: 24
+          runtime: node@24
+          install: false
       - run: pnpm install --no-frozen-lockfile
       - name: Cache Playwright browsers
         uses: actions/cache@v4
