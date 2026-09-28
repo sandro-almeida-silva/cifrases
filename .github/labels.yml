@@ -26,7 +26,7 @@ type:
 
 lifecycle:
   released:
-    color: "5319E7"
+    color: "4C1D95"
     description: "Implementação publicada"
   duplicate:
     color: "CFD3D7"
@@ -49,10 +49,10 @@ area:
     color: "006B75"
     description: "Detalhes e preparação da música"
   player:
-    color: "1D76DB"
+    color: "0052CC"
     description: "Execução e leitura musical"
   editor:
-    color: "5319E7"
+    color: "6F42C1"
     description: "Editor estrutural e timeline"
   importacao:
     color: "D4C5F9"
@@ -67,13 +67,13 @@ area:
     color: "FF9F1C"
     description: "Temas, aparência e identidade"
   conta:
-    color: "0052CC"
+    color: "0366D6"
     description: "Conta e autenticação"
   comunidades:
-    color: "0366D6"
+    color: "008672"
     description: "Comunidades, membros e permissões"
   offline:
-    color: "008672"
+    color: "00A67D"
     description: "PWA, cache e funcionamento offline"
   qualidade:
     color: "BFD4F2"
@@ -82,7 +82,7 @@ area:
     color: "E36209"
     description: "Observabilidade, segurança e operação"
   catalogo:
-    color: "6F42C1"
+    color: "F6921E"
     description: "Carga e manutenção do catálogo"
 
 # Legacy GitHub labels such as bug/enhancement may remain on historical issues.
