@@ -433,7 +433,11 @@ export default function HomePage() {
         const target = index + direction;
         if (index < 0 || target < 0 || target >= section.lines.length) return section;
         const lines = [...section.lines];
-        [lines[index], lines[target]] = [lines[target], lines[index]];
+        const current = lines[index];
+        const next = lines[target];
+        if (!current || !next) return section;
+        lines[index] = next;
+        lines[target] = current;
         return { ...section, lines };
       }),
     }));
