@@ -1,0 +1,21 @@
+name: Documentação
+description: Atualização ou correção de documentação
+title: ""
+labels:
+  - docs
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use esta issue quando a alteração for exclusivamente documental. Mudanças de código continuam exigindo issue própria.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo documental
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      description: Use exatamente uma área canônica quando a documentação estiver vinculada a um domínio.
