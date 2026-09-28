@@ -50,10 +50,5 @@
     "@tailwindcss/postcss": "4.3.3",
     "semantic-release": "25.0.9",
     "typescript": "5.9.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "tesseract.js"
-    ]
   }
 }
