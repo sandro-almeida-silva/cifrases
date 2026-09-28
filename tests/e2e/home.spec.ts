@@ -404,8 +404,8 @@ test.describe("Cifrases", () => {
 
 });
 
-  test("controls synchronized auto-scroll without taking over manual reading", async ({ page, context }, testInfo) => {
-    await context.addInitScript((song) => {
+  test("controls synchronized auto-scroll without taking over manual reading", async ({ page }, testInfo) => {
+    await page.addInitScript((song) => {
       localStorage.clear();
       localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
     }, seededSong);
