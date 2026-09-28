@@ -433,6 +433,8 @@ test.describe("Cifrases", () => {
     await expect(page.getByRole("button", { name: "Retomar" })).toHaveAttribute("aria-pressed", "false");
     await page.getByRole("button", { name: "Retomar" }).click();
     await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Auto-scroll off" }).click();
+
+    await page.getByRole("button", { name: "Auto-scroll on" }).click();
+    await expect(page.getByRole("button", { name: "Auto-scroll off" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Desativada" })).toBeDisabled();
   });
