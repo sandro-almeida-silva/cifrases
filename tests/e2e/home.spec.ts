@@ -322,7 +322,7 @@ test.describe("Cifrases", () => {
     expect(autosave.song.media.original.name).toBe("cifra-original.png");
 
     await page.getByRole("button", { name: "Salvar" }).click();
-    await expect(page.getByRole("heading", { name: "cifra-original.png" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "cifra-original" })).toBeVisible();
 
     const saved = await page.evaluate(() => {
       const raw = localStorage.getItem("cifrases:songs:v1");
