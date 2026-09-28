@@ -92,7 +92,15 @@ Qualquer alteração fora desses padrões faz o pipeline executar a validação 
 
 A regra é conservadora: se houver dúvida, o pipeline pesado é executado.
 
-## 11. Definition of Done
+## 11. Aprendizados obrigatórios do CI
+
+Quando um job falhar, o agente deve validar o commit efetivamente testado antes de fazer rerun. Rerun repete o snapshot da execução original; uma correção em outro commit exige uma nova execução de PR/push.
+
+Após qualquer refactor, o caminho mínimo de validação é `pnpm lint` + `pnpm typecheck`, seguido de `pnpm test` e `pnpm build` via `pnpm check`. Helpers adicionados durante um refactor devem ser usados ou removidos antes do merge.
+
+Quando o CI apontar falha de código, registre o aprendizado na issue correspondente e corrija a causa antes de considerar a issue concluída.
+
+## 12. Definition of Done
 
 - Issue vinculada.
 - Classificação correta.
