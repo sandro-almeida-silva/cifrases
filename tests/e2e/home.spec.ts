@@ -308,7 +308,8 @@ test.describe("Cifrases", () => {
       const raw = localStorage.getItem("cifrases:editor-autosave:v1");
       return raw ? JSON.parse(raw) : null;
     });
-    expect(draft).toBeNull();
+    expect(draft.song.media.original.mimeType).toBe("image/png");
+    expect(draft.song.media.original.name).toBe("cifra-original.png");
 
     await page.getByRole("textbox", { name: "Letra da linha 1 da seção 1" }).fill("Conteúdo revisado");
     await expect(page.getByText("Alterações não salvas")).toBeVisible();
