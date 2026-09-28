@@ -36,7 +36,7 @@ jobs:
           while IFS= read -r file; do
             [[ -z "$file" ]] && continue
             case "$file" in
-              *.md|docs/*)
+              *.md|docs/*|.github/workflows/*)
                 ;;
               *)
                 docs_only=false
@@ -59,6 +59,10 @@ jobs:
       - name: Validate documentation-only change
         if: needs.changes.outputs.docs_only == 'true'
         run: git diff --check "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
+
+      - name: Validate GitHub workflows
+        if: needs.changes.outputs.docs_only == 'true'
+        uses: raven-actions/actionlint@v2.2.0
 
       - uses: pnpm/setup@v2
         if: needs.changes.outputs.docs_only != 'true'
