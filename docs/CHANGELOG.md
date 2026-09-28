@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.18.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.17.0...v1.18.0) (2026-09-28)
+
+
+### Features
+
+* **ocr:** extract lyrics and structure from imported documents ([#16](https://github.com/sandro-almeida-silva/cifrases/issues/16)) ([b750e10](https://github.com/sandro-almeida-silva/cifrases/commit/b750e1018253967d5412e5070cb9179ff80ca8ac))
+
 # [1.17.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.16.0...v1.17.0) (2026-09-28)
 
 
