@@ -321,8 +321,10 @@ test.describe("Cifrases", () => {
       context.fillStyle = "black";
       context.font = "bold 72px Arial";
       context.fillText("REFRAO", 100, 130);
+      context.font = "bold 48px Arial";
+      context.fillText("C      G      Am      F", 100, 205);
       context.font = "56px Arial";
-      context.fillText("Quando voce chegou", 100, 250);
+      context.fillText("Quando voce chegou", 100, 300);
       context.fillText("Eu pude cantar", 100, 350);
       return canvas.toDataURL("image/png");
     });
@@ -340,6 +342,8 @@ test.describe("Cifrases", () => {
     await expect(page.getByText(/OCR concluído/)).toBeVisible({ timeout: 90000 });
     await expect(page.getByText(/Confiança média:/)).toBeVisible();
     await expect(page.getByRole("textbox", { name: /Letra da linha 1 da seção 1/ })).not.toHaveValue("");
+    await expect(page.getByRole("textbox", { name: /Acordes da linha 1 da seção 1/ })).toHaveValue(/C@/);
+    await expect(page.getByRole("textbox", { name: /Acordes da linha 1 da seção 1/ })).toHaveValue(/G@/);
   });
 
   test("imports a validated image as a reviewable draft", async ({ page }, testInfo) => {
