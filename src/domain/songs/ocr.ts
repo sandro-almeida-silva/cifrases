@@ -93,8 +93,13 @@ async function recognizeImage(blob: Blob, onProgress?: (progress: OcrProgress) =
   });
 
   try {
-    const result = await worker.recognize(blob);
-    return (result.data.lines ?? []).map((line) => ({ text: line.text, confidence: line.confidence }));
+    const result = await worker.recognize(blob, {}, { blocks: true });
+    const lines = (result.data.blocks ?? []).flatMap((block) =>
+      block.paragraphs.flatMap((paragraph) =>
+        paragraph.lines.map((line) => ({ text: line.text, confidence: line.confidence })),
+      ),
+    );
+    return lines;
   } finally {
     await worker.terminate();
   }
@@ -102,14 +107,15 @@ async function recognizeImage(blob: Blob, onProgress?: (progress: OcrProgress) =
 
 async function renderPdfPages(file: Blob): Promise<Blob[]> {
   const pdfjs = await import("pdfjs-dist");
-  const document = await pdfjs.getDocument({
+  const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
     disableAutoFetch: true,
     disableStream: true,
-  }).promise;
+  });
+  const document = await loadingTask.promise;
 
   if (document.numPages > MAX_PDF_PAGES) {
-    await document.destroy();
+    await loadingTask.destroy();
     throw new Error(`O PDF excede o limite de ${MAX_PDF_PAGES} páginas para OCR.`);
   }
 
@@ -120,16 +126,23 @@ async function renderPdfPages(file: Blob): Promise<Blob[]> {
       const baseViewport = page.getViewport({ scale: 1 });
       const scale = Math.min(1.75, MAX_RENDER_WIDTH / baseViewport.width);
       const viewport = page.getViewport({ scale: Math.max(scale, 1) });
-      const canvas = new OffscreenCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Não foi possível preparar a página do PDF para OCR.");
-      await page.render({ canvasContext: context as CanvasRenderingContext2D, viewport }).promise;
-      const blob = await canvas.convertToBlob({ type: "image/png" });
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((value) => {
+          if (value) resolve(value);
+          else reject(new Error("Não foi possível preparar a página do PDF para OCR."));
+        }, "image/png");
+      });
       images.push(blob);
       page.cleanup();
     }
   } finally {
-    await document.destroy();
+    await loadingTask.destroy();
   }
   return images;
 }
