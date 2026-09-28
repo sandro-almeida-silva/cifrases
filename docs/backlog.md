@@ -117,6 +117,7 @@ A lista deve evitar cores duplicadas entre labels canônicas.
 | #37 | player | aberta | Player: modo palco / teleprompter musical |
 | #51 | player | concluída | Player: corrigir build quebrado por prop não desestruturada |
 | #53 | player | concluída | Player: corrigir contrato de pausa do auto-scroll |
+| #57 | qualidade | aberta | Documentação: consolidar fluxo CI/CD e governança de mudanças |
 
 ## Regras de organização
 
