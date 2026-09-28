@@ -112,17 +112,17 @@ async function renderPdfPages(file: Blob): Promise<Blob[]> {
     disableAutoFetch: true,
     disableStream: true,
   });
-  const document = await loadingTask.promise;
+  const pdfDocument = await loadingTask.promise;
 
-  if (document.numPages > MAX_PDF_PAGES) {
+  if (pdfDocument.numPages > MAX_PDF_PAGES) {
     await loadingTask.destroy();
     throw new Error(`O PDF excede o limite de ${MAX_PDF_PAGES} páginas para OCR.`);
   }
 
   const images: Blob[] = [];
   try {
-    for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-      const page = await document.getPage(pageNumber);
+    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+      const page = await pdfDocument.getPage(pageNumber);
       const baseViewport = page.getViewport({ scale: 1 });
       const scale = Math.min(1.75, MAX_RENDER_WIDTH / baseViewport.width);
       const viewport = page.getViewport({ scale: Math.max(scale, 1) });
@@ -133,7 +133,7 @@ async function renderPdfPages(file: Blob): Promise<Blob[]> {
       if (!context) throw new Error("Não foi possível preparar a página do PDF para OCR.");
       await page.render({ canvas, canvasContext: context, viewport }).promise;
       const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((value) => {
+        canvas.toBlob((value: Blob | null) => {
           if (value) resolve(value);
           else reject(new Error("Não foi possível preparar a página do PDF para OCR."));
         }, "image/png");
