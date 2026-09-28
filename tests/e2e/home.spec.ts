@@ -301,6 +301,47 @@ test.describe("Cifrases", () => {
     await expect(page.locator('iframe[title="Pré-visualização do arquivo original"]')).toBeVisible();
   });
 
+  test("extracts OCR into an editable song structure", async ({ page }, testInfo) => {
+    test.setTimeout(120000);
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+
+    const pngDataUrl = await page.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1600;
+      canvas.height = 500;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Canvas indisponível");
+      context.fillStyle = "white";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "black";
+      context.font = "bold 72px Arial";
+      context.fillText("REFRAO", 100, 130);
+      context.font = "56px Arial";
+      context.fillText("Quando voce chegou", 100, 250);
+      context.fillText("Eu pude cantar", 100, 350);
+      return canvas.toDataURL("image/png");
+    });
+
+    const importInput = page.locator('input[type="file"][accept*=".pdf"]');
+    await importInput.setInputFiles({
+      name: "cifra-ocr.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(pngDataUrl.split(",")[1] ?? "", "base64"),
+    });
+
+    await expect(page.getByRole("heading", { name: "Cadastrar música" })).toBeVisible();
+    await page.getByRole("button", { name: "Extrair com OCR" }).click();
+
+    await expect(page.getByText(/OCR concluído/)).toBeVisible({ timeout: 90000 });
+    await expect(page.getByText(/Confiança média:/)).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /Letra da linha 1 da seção 1/ })).not.toHaveValue("");
+  });
+
   test("imports a validated image as a reviewable draft", async ({ page }, testInfo) => {
     await page.goto("/");
 
