@@ -33,9 +33,12 @@ import {
   cloneSong,
   createSongId,
   defaultPlayerPreferences,
+  loadEditorAutosave,
   loadLibraryState,
   loadSongs,
   resolveMediaUrl,
+  saveEditorAutosave,
+  clearEditorAutosave,
   saveLibraryState,
   saveSongs,
   slugify,
@@ -148,6 +151,7 @@ export default function HomePage() {
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [editorAutosaveStatus, setEditorAutosaveStatus] = useState<"idle" | "saved" | "recovered">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const draftDirty = Boolean(draft && draftOriginal && JSON.stringify(draft) !== JSON.stringify(draftOriginal));
 
@@ -180,6 +184,27 @@ export default function HomePage() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+
+  useEffect(() => {
+    if (view !== "editor" || !draft || !draftDirty) return undefined;
+    const timer = window.setTimeout(() => {
+      saveEditorAutosave({ song: cloneSong(draft), mode: draftMode, savedAt: new Date().toISOString() });
+      setEditorAutosaveStatus("saved");
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [draft, draftDirty, draftMode, view]);
+
+  useEffect(() => {
+    if (view !== "editor" || draft) return;
+    const autosave = loadEditorAutosave();
+    if (!autosave) return;
+    setDraft(cloneSong(autosave.song));
+    setDraftOriginal(cloneSong(autosave.song));
+    setDraftMode(autosave.mode);
+    setDraftErrors({});
+    setEditorAutosaveStatus("recovered");
+  }, [draft, view]);
 
   useEffect(() => {
     if (!draftDirty) return undefined;
@@ -343,6 +368,8 @@ export default function HomePage() {
       return exists ? state.map((item) => (item.id === next.id ? next : item)) : [next, ...state];
     });
     setSelectedId(next.id);
+    clearEditorAutosave();
+    setEditorAutosaveStatus("idle");
     setDraft(null);
     setDraftOriginal(null);
     setDraftMode("create");
@@ -350,8 +377,23 @@ export default function HomePage() {
     setView("player");
   }
 
+
+  useEffect(() => {
+    if (view !== "editor" || !draft) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        saveDraft();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [draft, view]);
+
   function cancelDraft() {
     if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+    clearEditorAutosave();
+    setEditorAutosaveStatus("idle");
     setDraft(null);
     setDraftOriginal(null);
     setDraftMode("create");
@@ -380,6 +422,21 @@ export default function HomePage() {
     }));
     setSelectedId(null);
     setView("library");
+  }
+
+  function moveLine(sectionId: string, lineId: string, direction: -1 | 1) {
+    updateDraft((current) => ({
+      ...current,
+      sections: current.sections.map((section) => {
+        if (section.id !== sectionId) return section;
+        const index = section.lines.findIndex((item) => item.id === lineId);
+        const target = index + direction;
+        if (index < 0 || target < 0 || target >= section.lines.length) return section;
+        const lines = [...section.lines];
+        [lines[index], lines[target]] = [lines[target], lines[index]];
+        return { ...section, lines };
+      }),
+    }));
   }
 
   function updateDraft(updater: (current: Song) => Song) {
@@ -622,8 +679,10 @@ export default function HomePage() {
           onMoveSection={moveSection}
           onRemoveSection={removeSection}
           onRemoveLine={removeLine}
+          onMoveLine={moveLine}
           onAttachAudio={attachAudio}
           onBuildTimeline={buildTimeline}
+          autosaveStatus={editorAutosaveStatus}
         />
       ) : null}
 
@@ -980,8 +1039,10 @@ function EditorView({
   onMoveSection,
   onRemoveSection,
   onRemoveLine,
+  onMoveLine,
   onAttachAudio,
   onBuildTimeline,
+  autosaveStatus,
 }: {
   song: Song;
   setSong: (song: Song | null) => void;
@@ -995,8 +1056,10 @@ function EditorView({
   onMoveSection: (sectionId: string, direction: -1 | 1) => void;
   onRemoveSection: (sectionId: string) => void;
   onRemoveLine: (sectionId: string, lineId: string) => void;
+  onMoveLine: (sectionId: string, lineId: string, direction: -1 | 1) => void;
   onAttachAudio: (file: File) => void;
   onBuildTimeline: () => void;
+  autosaveStatus: "idle" | "saved" | "recovered";
 }) {
   function changeSection(sectionId: string, updater: (section: SongSection) => SongSection) {
     setSong({
@@ -1021,6 +1084,7 @@ function EditorView({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">{mode === "edit" ? "Editar música" : "Cadastrar música"}</h1>
           <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
+          <p className="mt-2 text-xs text-muted" role="status">{autosaveStatus === "saved" ? "Rascunho salvo localmente." : autosaveStatus === "recovered" ? "Rascunho recuperado do armazenamento local." : "Autosave local ativo durante a edição."}</p>
           {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null}
         </div>
         <div className="flex gap-2">
@@ -1121,7 +1185,11 @@ function EditorView({
                     value={chordText(item.chords)}
                     onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, chords: parseChords(event.target.value) }))}
                   />
-                  <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
+                  <div className="flex items-center gap-1">
+                    <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, -1)} disabled={lineIndex === 0} aria-label={`Mover linha ${lineIndex + 1} para cima`}><ArrowUp size={14} /></button>
+                    <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, 1)} disabled={lineIndex === section.lines.length - 1} aria-label={`Mover linha ${lineIndex + 1} para baixo`}><ArrowDown size={14} /></button>
+                    <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
+                  </div>
                 </div>
               ))}
               {errors[`lines-${section.id}`] ? <p className="text-xs text-red-300">{errors[`lines-${section.id}`]}</p> : null}
