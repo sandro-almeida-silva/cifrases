@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.1...v1.18.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ocr:** remove unused chord helpers ([#68](https://github.com/sandro-almeida-silva/cifrases/issues/68)) ([51a7059](https://github.com/sandro-almeida-silva/cifrases/commit/51a705924a2f484e3d7bedc90b14f58b32e5a544))
+
 ## [1.18.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.0...v1.18.1) (2026-09-28)
 
 
