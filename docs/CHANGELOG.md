@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.16.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.15.0...v1.16.0) (2026-09-28)
+
+
+### Features
+
+* **editor:** complete structural editing and autosave ([#13](https://github.com/sandro-almeida-silva/cifrases/issues/13)) ([a1d84b5](https://github.com/sandro-almeida-silva/cifrases/commit/a1d84b515ea150dfb647d1b3f36322140dddad93))
+
 # [1.15.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.2...v1.15.0) (2026-09-28)
 
 
