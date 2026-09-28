@@ -24,6 +24,7 @@ export type OcrExtraction = {
   sections: SongSection[];
   confidence: number;
   lowConfidenceCount: number;
+  chordReviewCount: number;
   source: "image" | "pdf";
 };
 
@@ -243,5 +244,13 @@ export async function extractSongFromOriginal(
   }
 
   onProgress?.({ stage: "finalizing", progress: 100 });
-  return { ...buildSections(lines), source };
+  const built = buildSections(lines);
+  return {
+    ...built,
+    chordReviewCount: built.sections
+      .flatMap((section) => section.lines)
+      .flatMap((line) => line.chords ?? [])
+      .filter((chord) => chord.ocrNeedsReview).length,
+    source,
+  };
 }
