@@ -364,6 +364,7 @@ test.describe("Cifrases", () => {
 
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
     }
 
     const importInput = page.locator('input[type="file"][accept*=".pdf"]');
