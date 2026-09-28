@@ -3,6 +3,13 @@ import type { Song, SongMedia, SongMediaKind, SongMediaRef } from "./types";
 export const SONGS_STORAGE_KEY = "cifrases:songs:v1";
 export const LIBRARY_STORAGE_KEY = "cifrases:library:v1";
 export const MEDIA_STORAGE_PREFIX = "cifrases:media:v1";
+export const EDITOR_AUTOSAVE_STORAGE_KEY = "cifrases:editor-autosave:v1";
+
+export type EditorAutosave = {
+  song: Song;
+  mode: "create" | "edit";
+  savedAt: string;
+};
 
 export type PlayerPreferences = {
   fontScale: number;
@@ -176,4 +183,30 @@ export function isSong(value: unknown): value is Song {
 
 export function cloneSong(song: Song): Song {
   return JSON.parse(JSON.stringify(song)) as Song;
+}
+
+
+export function saveEditorAutosave(value: EditorAutosave): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(EDITOR_AUTOSAVE_STORAGE_KEY, JSON.stringify(value));
+}
+
+export function loadEditorAutosave(): EditorAutosave | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(EDITOR_AUTOSAVE_STORAGE_KEY) ?? "null");
+    if (!value || typeof value !== "object") return null;
+    const candidate = value as Partial<EditorAutosave>;
+    if (!candidate.song || !isSong(candidate.song) || (candidate.mode !== "create" && candidate.mode !== "edit") || typeof candidate.savedAt !== "string") {
+      return null;
+    }
+    return { song: candidate.song, mode: candidate.mode, savedAt: candidate.savedAt };
+  } catch {
+    return null;
+  }
+}
+
+export function clearEditorAutosave(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(EDITOR_AUTOSAVE_STORAGE_KEY);
 }
