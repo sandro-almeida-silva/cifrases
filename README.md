@@ -30,7 +30,7 @@ O Cifrases nasceu para apoiar músicos em uma experiência comunitária, mas o p
 ## Stack
 
 - Node.js 24.x
-- pnpm 10.16.1
+- pnpm 11.28.0
 - Next.js 16
 - React 19
 - TypeScript 5.9
@@ -67,7 +67,8 @@ pnpm build
 | [Modo de apresentação](docs/presentation-mode.md) | Regras dos modos 16:9 e palco |
 | [Design System](docs/design-system.md) | Princípios visuais e temas |
 | [Testes](docs/testing.md) | TDD, ATDD, E2E e CI |
-| [Desenvolvimento](docs/development.md) | Workflow, commits, PRs e Definition of Done |
+| [Desenvolvimento](docs/development.md) | Workflow, commits e Definition of Done |
+| [CI/CD](docs/ci-cd.md) | Fluxo de governança, gates, docs-only e publicação |
 | [Backlog](docs/backlog.md) | Inventário canônico das issues e taxonomia |
 | [Roadmap](docs/roadmap.md) | Evolução funcional por capacidade |
 
