@@ -624,6 +624,7 @@ export default function HomePage() {
           onRemoveLine={removeLine}
           onAttachAudio={attachAudio}
           onBuildTimeline={buildTimeline}
+          onTimelineUpdate={(patch) => updateDraft((current) => ({ ...current, timeline: { ...(current.timeline ?? { events: [] }), ...patch } }))}
         />
       ) : null}
 
@@ -982,6 +983,7 @@ function EditorView({
   onRemoveLine,
   onAttachAudio,
   onBuildTimeline,
+  onTimelineUpdate,
 }: {
   song: Song;
   setSong: (song: Song | null) => void;
@@ -997,6 +999,7 @@ function EditorView({
   onRemoveLine: (sectionId: string, lineId: string) => void;
   onAttachAudio: (file: File) => void;
   onBuildTimeline: () => void;
+  onTimelineUpdate: (patch: Partial<Song["timeline"]>) => void;
 }) {
   function changeSection(sectionId: string, updater: (section: SongSection) => SongSection) {
     setSong({
@@ -1134,6 +1137,8 @@ function EditorView({
         ))}
       </div>
 
+      <TimelineEditor song={song} onUpdate={onTimelineUpdate} />
+
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onAddSection}><Plus size={15} /> Seção</button>
         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBuildTimeline}><AudioLines size={15} /> Timeline inicial</button>
@@ -1149,10 +1154,10 @@ function TimelineEditor({
   song: Song;
   onUpdate: (patch: Partial<Song>) => void;
 }) {
-  const timeline = song.timeline ?? { bpm: song.bpm, timeSignature: [4, 4] as [number, number], events: [] };
+  const timeline = song.timeline ?? { bpm: song.bpm ?? 120, timeSignature: [4, 4] as [number, number], events: [] };
   const events = [...timeline.events].sort((a, b) => a.atMs - b.atMs);
 
-  function updateTimeline(patch: Partial<Song["timeline"]>) {
+  function updateTimeline(patch: { bpm?: number; timeSignature?: [number, number]; events?: SongTimelineEvent[] }) {
     onUpdate({ timeline: { ...timeline, ...patch, events: patch.events ?? timeline.events } });
   }
 
@@ -1176,7 +1181,7 @@ function TimelineEditor({
     updateTimeline({ events: events.filter((_, eventIndex) => eventIndex !== index) });
   }
 
-  const sectionOptions = song.sections.flatMap((section) =>
+  const sectionOptions: Array<{ value: string; label: string; sectionId: string; lineId?: string }> = song.sections.flatMap((section) =>
     section.lines.length
       ? section.lines.map((line) => ({
           value: `${section.id}::${line.id}`,
