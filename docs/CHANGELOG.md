@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.14.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.13.0...v1.14.0) (2026-09-28)
+
+
+### Features
+
+* **player:** add synchronized auto-scroll controls ([ae25a48](https://github.com/sandro-almeida-silva/cifrases/commit/ae25a4894e317d42548d597c67dcace101a5deba))
+
 # [1.13.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.12.0...v1.13.0) (2026-09-27)
 
 
