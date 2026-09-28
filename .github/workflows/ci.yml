@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/setup@v1
+      - uses: pnpm/setup@v2
         with:
-          version: 10.16.1
+          version: 11.28.0
           run_install: false
           node-version: 24
       - run: pnpm install --no-frozen-lockfile
@@ -32,9 +32,9 @@ jobs:
     needs: quality
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/setup@v1
+      - uses: pnpm/setup@v2
         with:
-          version: 10.16.1
+          version: 11.28.0
           run_install: false
           node-version: 24
       - run: pnpm install --no-frozen-lockfile
