@@ -14,6 +14,13 @@ Este documento é o inventário funcional do Cifrases. O estado da issue no GitH
 - `refactor`: reorganização interna sem mudança de comportamento.
 - `perf`: melhoria de desempenho.
 
+### Ciclo de vida
+
+- `released`: implementação já publicada.
+- `duplicate`: issue consolidada por duplicidade.
+
+Labels padrão do GitHub como `bug` podem existir em issues antigas, mas a classificação canônica deste projeto usa `fix`.
+
 ### Área
 
 - `area:fundacao`
@@ -72,6 +79,8 @@ Uma issue funcional recebe normalmente um label de tipo e um label de área.
 | #30 | catalogo | aberta | Catálogo inicial: formato de importação e cadastro das primeiras músicas |
 | #34 | tema | aberta | Tema: modo claro e modo escuro |
 | #37 | player | aberta | Player: modo palco / teleprompter musical |
+| #51 | player | concluída | Player: corrigir build quebrado por prop não desestruturada |
+| #53 | player | concluída | Player: corrigir contrato de pausa do auto-scroll |
 
 ## Regras de organização
 
