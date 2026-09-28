@@ -1,0 +1,89 @@
+# Canonical label palette for Cifrases.
+# The sync workflow applies these names, colors and descriptions to GitHub Issues.
+
+type:
+  feature:
+    color: "1D76DB"
+    description: "Nova capacidade de produto"
+  fix:
+    color: "D73A4A"
+    description: "Correção de comportamento existente"
+  docs:
+    color: "0075CA"
+    description: "Documentação"
+  test:
+    color: "8957E5"
+    description: "Testes ou infraestrutura de testes"
+  chore:
+    color: "6A737D"
+    description: "Manutenção técnica sem mudança funcional relevante"
+  refactor:
+    color: "A2EEEF"
+    description: "Reorganização interna sem mudança de comportamento"
+  perf:
+    color: "FBCA04"
+    description: "Melhoria de desempenho"
+
+lifecycle:
+  released:
+    color: "5319E7"
+    description: "Implementação publicada"
+  duplicate:
+    color: "CFD3D7"
+    description: "Issue consolidada por duplicidade"
+
+area:
+  fundacao:
+    color: "B60205"
+    description: "Arquitetura e contratos fundamentais"
+  dados:
+    color: "E99695"
+    description: "Persistência e dados"
+  biblioteca:
+    color: "C2E0C6"
+    description: "Catálogo, busca e organização"
+  cadastro:
+    color: "0E8A16"
+    description: "Criação e edição de músicas"
+  musica:
+    color: "006B75"
+    description: "Detalhes e preparação da música"
+  player:
+    color: "1D76DB"
+    description: "Execução e leitura musical"
+  editor:
+    color: "5319E7"
+    description: "Editor estrutural e timeline"
+  importacao:
+    color: "D4C5F9"
+    description: "Importação e preparação de arquivos"
+  ia:
+    color: "7057FF"
+    description: "IA, OCR e extração inteligente"
+  apresentacao:
+    color: "F9D0C4"
+    description: "Apresentação e projeção"
+  tema:
+    color: "FF9F1C"
+    description: "Temas, aparência e identidade"
+  conta:
+    color: "0052CC"
+    description: "Conta e autenticação"
+  comunidades:
+    color: "0366D6"
+    description: "Comunidades, membros e permissões"
+  offline:
+    color: "008672"
+    description: "PWA, cache e funcionamento offline"
+  qualidade:
+    color: "BFD4F2"
+    description: "Acessibilidade, qualidade e experiência"
+  operacao:
+    color: "E36209"
+    description: "Observabilidade, segurança e operação"
+  catalogo:
+    color: "6F42C1"
+    description: "Carga e manutenção do catálogo"
+
+# Legacy GitHub labels such as bug/enhancement may remain on historical issues.
+# New issues must use the canonical taxonomy documented in docs/backlog.md.
