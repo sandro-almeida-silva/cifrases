@@ -33,6 +33,7 @@ import {
   cloneSong,
   createSongId,
   defaultPlayerPreferences,
+  deleteOriginalImport,
   loadEditorAutosave,
   loadOriginalImport,
   saveOriginalImport,
@@ -407,6 +408,9 @@ export default function HomePage() {
       return exists ? state.map((item) => (item.id === next.id ? next : item)) : [next, ...state];
     });
     setSelectedId(next.id);
+    if (draftMode === "create" && draft.media?.original?.id) {
+      void deleteOriginalImport(draft.media.original.id).catch(() => undefined);
+    }
     clearEditorAutosave();
     setEditorAutosaveStatus("idle");
     setDraft(null);
@@ -448,6 +452,9 @@ export default function HomePage() {
   function deleteSong(id: string) {
     const item = songs.find((songItem) => songItem.id === id);
     if (!item || !window.confirm(`Excluir "${item.title}"?`)) return;
+    if (item.media?.original?.id) {
+      void deleteOriginalImport(item.media.original.id).catch(() => undefined);
+    }
     setSongs((state) => state.filter((songItem) => songItem.id !== id));
     setLibrary((state) => ({
       ...state,
@@ -623,6 +630,7 @@ export default function HomePage() {
       setDraft(next);
       setDraftOriginal(cloneSong(next));
       setDraftMode("create");
+      saveEditorAutosave({ song: cloneSong(next), mode: "create", savedAt: new Date().toISOString() });
       setDraftErrors({});
       setDraftOriginalName(file.name.slice(0, 120));
       setDraftOriginalUrl(URL.createObjectURL(file));
