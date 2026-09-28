@@ -63,6 +63,13 @@ export type SongTimeline = {
   events: SongTimelineEvent[];
 };
 
+export type SongOcrMetadata = {
+  confidence: number;
+  lowConfidenceCount: number;
+  processedAt: string;
+  source: "image" | "pdf";
+};
+
 export type Song = {
   id: string;
   slug: string;
@@ -74,4 +81,5 @@ export type Song = {
   sections: SongSection[];
   media?: SongMedia;
   timeline?: SongTimeline;
+  ocr?: SongOcrMetadata;
 };
