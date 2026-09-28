@@ -404,14 +404,25 @@ test.describe("Cifrases", () => {
 
 });
 
-  test("controls synchronized auto-scroll without taking over manual reading", async ({ page }, testInfo) => {
+  test("controls synchronized auto-scroll without taking over manual reading", async ({ page, context }, testInfo) => {
+    await context.addInitScript((song) => {
+      localStorage.clear();
+      localStorage.setItem("cifrases:songs:v1", JSON.stringify([song]));
+    }, seededSong);
+
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
+
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
       await page.locator('button[title="Biblioteca"]').click();
+      await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     }
+
     await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
+    await expect(page.getByRole("heading", { name: "Detalhes da música" })).toBeVisible();
     await page.getByRole("button", { name: "Tocar" }).click();
+
     await expect(page.getByText("Rolagem automática")).toBeVisible();
     await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Pausar" }).click();
