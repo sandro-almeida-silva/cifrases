@@ -179,7 +179,7 @@ test.describe("Cifrases", () => {
     await page.getByText("Artista", { exact: true }).locator("..").getByRole("textbox").fill("Banda Cifrases");
     await page.getByText("Categoria", { exact: true }).locator("..").getByRole("textbox").fill("Louvor");
     await page.getByText("Tonalidade", { exact: true }).locator("..").getByRole("textbox").fill("G");
-    await page.getByText("BPM", { exact: true }).locator("..").getByRole("spinbutton").fill("120");
+    await page.getByRole("spinbutton", { name: "BPM", exact: true }).fill("120");
 
     await page.getByRole("textbox", { name: "Nome da seção 1" }).fill("Verso principal");
     await page.getByRole("textbox", { name: "Letra da linha 1 da seção 1" }).fill("Minha primeira linha");
