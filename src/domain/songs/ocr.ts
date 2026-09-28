@@ -54,7 +54,12 @@ function buildSections(lines: OcrLine[]) {
       };
       continue;
     }
-    current.lines.push({ id: `ocr-line-${Date.now()}-${index}`, text, chords: [] });
+    current.lines.push({
+      id: `ocr-line-${Date.now()}-${index}`,
+      text,
+      chords: [],
+      ocrConfidence: Math.round(item.confidence),
+    });
     confidenceValues.push(item.confidence);
     if (item.confidence < OCR_LOW_CONFIDENCE) lowConfidenceCount += 1;
   }
@@ -115,7 +120,7 @@ async function renderPdfPages(file: Blob): Promise<Blob[]> {
       const baseViewport = page.getViewport({ scale: 1 });
       const scale = Math.min(1.75, MAX_RENDER_WIDTH / baseViewport.width);
       const viewport = page.getViewport({ scale: Math.max(scale, 1) });
-      const canvas = document.createCanvas(viewport.width, viewport.height);
+      const canvas = new OffscreenCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Não foi possível preparar a página do PDF para OCR.");
       await page.render({ canvasContext: context as CanvasRenderingContext2D, viewport }).promise;
