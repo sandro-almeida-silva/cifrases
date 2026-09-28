@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.0...v1.18.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ocr:** restore chord extraction CI ([#65](https://github.com/sandro-almeida-silva/cifrases/issues/65)) ([0f67d85](https://github.com/sandro-almeida-silva/cifrases/commit/0f67d85f23947ad0d5074fea0e5e10e1af9bc7d8))
+
 # [1.18.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.17.0...v1.18.0) (2026-09-28)
 
 
