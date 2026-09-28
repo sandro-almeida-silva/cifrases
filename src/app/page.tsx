@@ -1219,7 +1219,7 @@ function TimelineEditor({
               value={`${timeline.timeSignature?.[0] ?? 4}/${timeline.timeSignature?.[1] ?? 4}`}
               onChange={(event) => {
                 const [numerator, denominator] = event.target.value.split("/").map(Number);
-                updateTimeline({ timeSignature: [numerator, denominator] });
+                if (Number.isFinite(numerator) && Number.isFinite(denominator)) updateTimeline({ timeSignature: [numerator, denominator] as [number, number] });
               }}
               aria-label="Fórmula de compasso"
             >
