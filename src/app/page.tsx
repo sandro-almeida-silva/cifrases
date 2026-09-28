@@ -1181,6 +1181,8 @@ function EditorView({
   originalPreviewUrl,
   originalFileName,
   originalError,
+  ocrState,
+  onExtractOcr,
   onBuildTimeline,
   autosaveStatus,
   onTimelineUpdate,
