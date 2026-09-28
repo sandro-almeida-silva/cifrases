@@ -1,0 +1,35 @@
+name: Correção
+description: Relato ou correção de comportamento existente
+title: ""
+labels:
+  - fix
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Toda correção de código deve ter uma issue própria antes da implementação.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      description: Use exatamente uma área canônica, por exemplo area:player.
+    validations:
+      required: true
