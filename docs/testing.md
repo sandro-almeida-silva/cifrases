@@ -1,6 +1,6 @@
 # Estratégia de testes
 
-O Cifrases usa uma pirâmide de testes simples:
+O Cifrases usa uma pirâmide simples:
 
 ```text
         E2E / ATDD
@@ -18,28 +18,46 @@ O Cifrases usa uma pirâmide de testes simples:
 
 Para lógica de domínio:
 
-1. Escreva o teste que descreve o comportamento esperado.
+1. Escreva o teste.
 2. Execute para obter a falha esperada.
 3. Implemente a menor solução.
-4. Execute novamente até ficar verde.
+4. Faça o teste passar.
 5. Refatore preservando o comportamento.
 
 As regras de domínio devem ser testáveis sem navegador, banco ou rede.
 
 ## ATDD
 
-Antes de implementar uma jornada relevante, escreva critérios de aceitação orientados ao usuário em `tests/acceptance/*.feature`.
+Para jornadas relevantes:
 
-O cenário deve ter uma automação correspondente em `tests/e2e`.
+1. Defina o cenário em `tests/acceptance/*.feature`.
+2. Crie o teste Playwright correspondente em `tests/e2e`.
+3. Implemente até o cenário ficar verde.
+4. Refatore sem alterar o comportamento aceito.
 
-Use locators orientados à acessibilidade, como `getByRole`, `getByLabel` e `getByText`, evitando seletores acoplados a classes CSS.
+Prefira locators de acessibilidade como `getByRole`, `getByLabel` e `getByText`.
 
-## CI
+## Cobertura esperada
 
-Toda alteração em `main` e todo pull request executam:
+- Regra de domínio: teste unitário.
+- Contrato/persistência: teste de integração ou contrato quando aplicável.
+- Jornada de usuário: ATDD + E2E.
+- Correção de bug: teste de regressão sempre que reproduzível.
 
-- Biome
-- TypeScript
-- testes unitários
-- build de produção
-- testes E2E em Chromium e mobile Chromium
+## Validação
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm test:e2e
+```
+
+Ou:
+
+```bash
+pnpm check
+```
+
+Nenhuma alteração deve desabilitar typecheck ou contornar os testes para obter um build verde.
