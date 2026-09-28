@@ -43,6 +43,42 @@ Labels padrão do GitHub como `bug` podem existir em issues antigas, mas a class
 
 Uma issue funcional recebe normalmente um label de tipo e um label de área.
 
+## Cores oficiais
+
+As cores são parte da taxonomia e devem permanecer consistentes no GitHub. A fonte de verdade é [.github/labels.yml](../.github/labels.yml).
+
+| Label | Cor |
+| --- | --- |
+| `feature` | #1D76DB |
+| `fix` | #D73A4A |
+| `docs` | #0075CA |
+| `test` | #8957E5 |
+| `chore` | #6A737D |
+| `refactor` | #A2EEEF |
+| `perf` | #FBCA04 |
+| `released` | #4C1D95 |
+| `duplicate` | #CFD3D7 |
+| `area:fundacao` | #B60205 |
+| `area:dados` | #E99695 |
+| `area:biblioteca` | #C2E0C6 |
+| `area:cadastro` | #0E8A16 |
+| `area:musica` | #006B75 |
+| `area:player` | #0052CC |
+| `area:editor` | #6F42C1 |
+| `area:importacao` | #D4C5F9 |
+| `area:ia` | #7057FF |
+| `area:apresentacao` | #F9D0C4 |
+| `area:tema` | #FF9F1C |
+| `area:conta` | #0366D6 |
+| `area:comunidades` | #008672 |
+| `area:offline` | #00A67D |
+| `area:qualidade` | #BFD4F2 |
+| `area:operacao` | #E36209 |
+| `area:catalogo` | #F6921E |
+
+A lista deve evitar cores duplicadas entre labels canônicas.
+
+
 ## Inventário
 
 | Issue | Área | Status | Título |
