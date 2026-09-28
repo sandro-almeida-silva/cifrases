@@ -277,11 +277,36 @@ test.describe("Cifrases", () => {
     expect(saved.title).toBe("Primeira Canção");
   });
 
+  test("imports a PDF as a reviewable draft", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    if (testInfo.project.name === "mobile-chrome") {
+      await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
+    }
+
+    const importInput = page.locator('input[type="file"][accept*=".pdf"]');
+    const pdf = Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF");
+
+    await importInput.setInputFiles({
+      name: "cifra-original.pdf",
+      mimeType: "application/pdf",
+      buffer: pdf,
+    });
+
+    await expect(page.getByRole("heading", { name: "Cadastrar música" })).toBeVisible();
+    await expect(page.getByText("Arquivo original")).toBeVisible();
+    await expect(page.getByText("cifra-original.pdf")).toBeVisible();
+    await expect(page.getByText("Revisão obrigatória")).toBeVisible();
+    await expect(page.locator('iframe[title="Pré-visualização do arquivo original"]')).toBeVisible();
+  });
+
   test("imports a validated image as a reviewable draft", async ({ page }, testInfo) => {
     await page.goto("/");
 
     if (testInfo.project.name === "mobile-chrome") {
       await page.getByRole("button", { name: "Abrir menu" }).click();
+      await page.locator('button[title="Biblioteca"]').click();
     }
 
     const importInput = page.locator('input[type="file"][accept*=".pdf"]');
@@ -351,8 +376,12 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("O conteúdo do arquivo não corresponde a um formato suportado.")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
 
-    const songs = await page.evaluate(() => localStorage.getItem("cifrases:songs:v1"));
-    expect(songs).toBeNull();
+    const songs = await page.evaluate(() => {
+      const raw = localStorage.getItem("cifrases:songs:v1");
+      return raw ? JSON.parse(raw) : [];
+    });
+    expect(songs).toHaveLength(1);
+    expect(songs[0].title).toBe("Primeira Canção");
   });
 
   test("creates a song with an automatic slug", async ({ page }, testInfo) => {
