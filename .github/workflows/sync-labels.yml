@@ -1,0 +1,89 @@
+name: Sync Issue Labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/sync-labels.yml"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync labels
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require("fs");
+            const path = ".github/labels.yml";
+            const text = fs.readFileSync(path, "utf8");
+
+            const entries = [];
+            let section = "";
+
+            for (const rawLine of text.split("\n")) {
+              const line = rawLine.replace(/\r$/, "");
+              const sectionMatch = line.match(/^(type|lifecycle|area):\s*$/);
+              if (sectionMatch) {
+                section = sectionMatch[1];
+                continue;
+              }
+
+              const labelMatch = line.match(/^  ([^:]+):\s*$/);
+              if (labelMatch && section) {
+                entries.push({
+                  name: section === "area" ? `area:${labelMatch[1]}` : labelMatch[1],
+                  color: "",
+                  description: ""
+                });
+                continue;
+              }
+
+              const colorMatch = line.match(/^    color:\s*"([^"]+)"\s*$/);
+              const descriptionMatch = line.match(/^    description:\s*"([^"]*)"\s*$/);
+              const current = entries[entries.length - 1];
+
+              if (current && colorMatch) current.color = colorMatch[1];
+              if (current && descriptionMatch) current.description = descriptionMatch[1];
+            }
+
+            for (const label of entries) {
+              const existing = await github.rest.issues.listLabelsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+
+              const found = existing.data.find(item => item.name === label.name);
+
+              if (!found) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+              } else if (
+                found.color.toUpperCase() !== label.color.toUpperCase() ||
+                (found.description || "") !== label.description
+              ) {
+                await github.rest.issues.updateLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  new_name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+              }
+            }
+
+            core.info(`Synchronized ${entries.length} canonical labels.`);
