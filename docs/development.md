@@ -3,7 +3,7 @@
 ## Ambiente
 
 - Node.js 24.x
-- pnpm 10.16.1
+- pnpm 11.28.0
 
 ## Fluxo local
 
@@ -21,6 +21,18 @@ pnpm check
 - Mobile-first e acessibilidade.
 - TDD para regras de domínio.
 - ATDD para jornadas relevantes.
+
+## Issues
+
+O número do GitHub é a referência canônica. Não inclua numeração manual no título.
+
+Formato:
+
+```text
+Área: descrição objetiva
+```
+
+Labels funcionais usam tipo + área. Veja [Backlog](backlog.md).
 
 ## Commits
 
@@ -40,28 +52,21 @@ Exemplo:
 feat(player): add synchronized timeline
 ```
 
-## Issues
-
-O número do GitHub é a referência canônica. Não inclua numeração manual no título.
-
-Formato:
-
-```text
-Área: descrição objetiva
-```
-
-Labels funcionais usam tipo + área. Veja [Backlog](backlog.md).
-
 ## Pull Requests
 
-Um PR deve referenciar a issue, explicar o comportamento alterado, incluir testes relevantes e passar por `pnpm check`.
+Um PR deve referenciar a issue, explicar o comportamento alterado, incluir testes relevantes e passar pelas validações definidas em [CI/CD](ci-cd.md).
 
-Quando houver mudança de comportamento, a documentação correspondente deve ser atualizada no mesmo PR.
+Quando houver mudança de comportamento, arquitetura, contrato ou governança, a documentação correspondente deve ser atualizada no mesmo PR.
 
 ## Definition of Done
 
 - Critérios de aceite atendidos.
-- Testes relevantes verdes.
+- Testes e validações relevantes verdes.
 - Sem regressão conhecida no fluxo afetado.
 - Documentação atualizada quando necessário.
 - Conformidade com `AGENTS.md`.
+- Quality e E2E aprovados antes do merge em `main`.
+
+## CI/CD
+
+Consulte [CI/CD e governança de mudanças](ci-cd.md) para o fluxo completo de issue, branch, PR, Quality, E2E, merge, release e publicação.
