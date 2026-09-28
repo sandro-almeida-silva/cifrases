@@ -1,0 +1,38 @@
+name: Feature
+description: Solicitação de nova capacidade do produto
+title: ""
+labels:
+  - feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Crie uma issue por alteração de código. Selecione a área correspondente nas labels antes de iniciar a implementação.
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: Qual resultado de produto deve ser alcançado?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      description: Liste comportamentos verificáveis.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo
+      description: Inclua o que entra e o que fica fora.
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      description: Use exatamente uma área canônica, por exemplo area:player.
+    validations:
+      required: true
