@@ -109,6 +109,7 @@ export async function saveOriginalImport(file: File, validation: OriginalImportV
     path: `indexeddb://${ORIGINAL_IMPORT_STORE}/${id}`,
     mimeType: validation.mimeType,
     size: file.size,
+    name: file.name.trim().slice(0, 120),
   };
 }
 
