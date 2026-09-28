@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.1...v1.14.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* **production:** corrigir toggle do auto-scroll ([900fa23](https://github.com/sandro-almeida-silva/cifrases/commit/900fa231ab19de7efd2736dad1a78dc0a42e3f9b))
+
 ## [1.14.1](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.0...v1.14.1) (2026-09-28)
 
 
