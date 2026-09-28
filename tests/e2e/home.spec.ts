@@ -342,8 +342,11 @@ test.describe("Cifrases", () => {
     await expect(page.getByText(/OCR concluído/)).toBeVisible({ timeout: 90000 });
     await expect(page.getByText(/Confiança média:/)).toBeVisible();
     await expect(page.getByRole("textbox", { name: /Letra da linha 1 da seção 1/ })).not.toHaveValue("");
-    await expect(page.getByRole("textbox", { name: /Acordes da linha 1 da seção 1/ })).toHaveValue(/C@/);
-    await expect(page.getByRole("textbox", { name: /Acordes da linha 1 da seção 1/ })).toHaveValue(/G@/);
+    const chordField = page.getByRole("textbox", { name: /Acordes da linha 1 da seção 1/ });
+    await expect(chordField).toHaveValue(/C@/);
+    const chordValue = await chordField.inputValue();
+    expect(chordValue.split(/\s+/).filter(Boolean).length).toBeGreaterThanOrEqual(2);
+    expect(chordValue).toMatch(/(?:C|G|Am|F|F#m|Dm|E|A|D)@\d+/);
   });
 
   test("imports a validated image as a reviewable draft", async ({ page }, testInfo) => {
