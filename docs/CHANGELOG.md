@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.15.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.2...v1.15.0) (2026-09-28)
+
+
+### Features
+
+* **editor:** add visual timeline editing ([#14](https://github.com/sandro-almeida-silva/cifrases/issues/14)) ([715ca0f](https://github.com/sandro-almeida-silva/cifrases/commit/715ca0f8222aa94a82667ce8c41234fa45acd7ea))
+
 ## [1.14.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.14.1...v1.14.2) (2026-09-28)
 
 
