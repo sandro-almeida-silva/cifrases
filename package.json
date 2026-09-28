@@ -4,7 +4,7 @@
   "private": true,
   "description": "Plataforma musical para descobrir, tocar, sincronizar e apresentar músicas.",
   "license": "MIT",
-  "packageManager": "pnpm@10.16.1",
+  "packageManager": "pnpm@11.28.0",
   "engines": {
     "node": "24.x"
   },
