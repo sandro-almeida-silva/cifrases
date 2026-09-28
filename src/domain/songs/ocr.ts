@@ -75,11 +75,6 @@ function chordCandidates(
   return result;
 }
 
-function isChordOnlyLine(text: string, chords: ReturnType<typeof chordCandidates>): boolean {
-  const tokens = text.split(/\s+/).filter(Boolean);
-  return tokens.length > 0 && chords.length === tokens.length;
-}
-
 export function recognizeChords(
   text: string,
   words: OcrWord[] = [],
@@ -103,22 +98,6 @@ export function recognizeChords(
     chords: unique,
     reviewCount: unique.filter((item) => item.ocrNeedsReview).length,
   };
-}
-
-function projectChordPositions(
-  chords: ChordPlacement[],
-  sourceLength: number,
-  targetLength: number,
-): ChordPlacement[] {
-  if (!chords.length || sourceLength <= 0 || targetLength <= 0) return chords;
-
-  return chords.map((item) => ({
-    ...item,
-    position: Math.min(
-      targetLength,
-      Math.max(0, Math.round((item.position / sourceLength) * targetLength)),
-    ),
-  }));
 }
 
 function sectionFromHeading(text: string): { type: SongSectionType; label: string } | null {
@@ -163,14 +142,31 @@ function buildSections(lines: OcrLine[]) {
 
     const recognized = recognizeChords(item.text, item.words);
 
-    if (isChordOnlyLine(text, chordCandidates(item.text, item.words))) {
+    const chordOnlyLine = (() => {
+      const tokens = text.split(/\s+/).filter(Boolean);
+      const candidates = chordCandidates(item.text, item.words);
+      return tokens.length > 0 && candidates.length === tokens.length;
+    })();
+
+    if (chordOnlyLine) {
       pendingChords = [...pendingChords, ...recognized.chords];
       pendingSourceLength = Math.max(pendingSourceLength, text.length - 1, 1);
       continue;
     }
 
     const chords = pendingChords.length
-      ? projectChordPositions(pendingChords, pendingSourceLength, Math.max(text.length - 1, 1))
+      ? pendingChords.map((chord) => ({
+          ...chord,
+          position: Math.min(
+            Math.max(text.length - 1, 1),
+            Math.max(
+              0,
+              Math.round(
+                (chord.position / Math.max(pendingSourceLength, 1)) * Math.max(text.length - 1, 1),
+              ),
+            ),
+          ),
+        }))
       : recognized.chords;
 
     pendingChords = [];
