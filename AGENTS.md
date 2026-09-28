@@ -136,6 +136,19 @@ Para jornadas de usuário:
 3. Implementar até o cenário ficar verde.
 4. Refatorar sem alterar o comportamento aceito.
 
+## Regras de E2E para agentes
+
+Ao criar ou alterar testes Playwright:
+
+- preparar o estado inicial dentro do próprio cenário;
+- não depender de localStorage, cookies ou navegação deixados por outro teste;
+- validar o estado/contrato da UI antes de clicar em um controle dependente;
+- diferenciar controles que pausam/retomam uma funcionalidade de controles que ativam/desativam a funcionalidade;
+- considerar execução paralela e múltiplos projetos;
+- preferir locators de acessibilidade.
+
+Um exemplo recente do projeto mostrou que clicar em `Auto-scroll off` antes de colocar o controle no estado `on` fazia o teste aguardar até o timeout. O teste correto valida a transição de estado antes da ação.
+
 ## Next.js
 
 - Use App Router.
@@ -145,6 +158,18 @@ Para jornadas de usuário:
 - Mantenha `.next/types/**/*.ts` no tsconfig.
 - Mantenha `typedRoutes: true`.
 - Não use `next lint`; lint é responsabilidade do Biome.
+
+## CI/CD
+
+O fluxo operacional canônico está em [docs/ci-cd.md](./docs/ci-cd.md).
+
+Para agentes, a sequência obrigatória é:
+
+Issue → branch → implementação → validação → PR → Quality → E2E → merge em `main` → Release.
+
+Para mudanças exclusivamente documentais, o CI possui um caminho rápido. Ainda assim, os checks `Quality` e `E2E` devem ser publicados e concluídos com sucesso.
+
+Não use filtros de caminho que façam os checks obrigatórios deixarem de ser reportados.
 
 ## Testes
 
