@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Heart,
   Library,
+  ListMusic,
   Menu,
   Pause,
   Pencil,
@@ -28,6 +29,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { PlaylistsView } from "@/components/playlists/playlists-view";
 import { SongImportView, type ImportFields, type ImportValues } from "@/components/import/song-import-view";
 import { SongSections, sectionName } from "@/components/song/song-sections";
 import { Select } from "@/components/ui/select";
@@ -52,11 +54,20 @@ import {
   type LibraryState,
 } from "@/domain/songs/repository";
 import { type ChordSheetDraft, songFromChordSheet } from "@/domain/songs/chord-sheet";
+import {
+  addSongToPlaylist,
+  createPlaylist,
+  deletePlaylist,
+  moveSongInPlaylist,
+  removeSongFromPlaylist,
+  renamePlaylist,
+  type Playlist,
+} from "@/domain/songs/playlists";
 import { resolveTimelineEvent } from "@/domain/songs/timeline";
 import { transposeKey } from "@/domain/songs/transpose";
 import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType, SongTimelineEvent } from "@/domain/songs/types";
 
-type View = "library" | "import" | "editor" | "detail" | "player" | "presentation" | "settings";
+type View = "library" | "playlists" | "import" | "editor" | "detail" | "player" | "presentation" | "settings";
 type SortMode = "title" | "artist" | "recent";
 
 type DraftErrors = {
@@ -151,6 +162,7 @@ export default function HomePage() {
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
   const [pasteFields, setPasteFields] = useState<ImportFields>({ text: "" });
   const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
   const [draftOriginalName, setDraftOriginalName] = useState<string | null>(null);
@@ -302,6 +314,7 @@ export default function HomePage() {
 
 
   function openSong(id: string) {
+    setActivePlaylistId(null);
     setMobileMenu(false);
     setSelectedId(id);
     setTranspose(0);
@@ -341,6 +354,19 @@ export default function HomePage() {
       recent: [copy.id, ...state.recent.filter((id) => id !== copy.id)].slice(0, 20),
     }));
     setView("detail");
+  }
+
+  function changePlaylists(change: (playlists: Playlist[]) => Playlist[]) {
+    setLibrary((state) => ({ ...state, playlists: change(state.playlists) }));
+  }
+
+  function playPlaylist(id: string, songId?: string) {
+    const playlist = library.playlists.find((item) => item.id === id);
+    const target = songId ?? playlist?.songIds.find((item) => songs.some((songItem) => songItem.id === item));
+    if (!playlist || !target) return;
+    openSong(target);
+    setActivePlaylistId(id);
+    setView("player");
   }
 
   function startPasteImport() {
@@ -794,6 +820,20 @@ export default function HomePage() {
     seekAudio(0);
   }
 
+  const activePlaylist = library.playlists.find((item) => item.id === activePlaylistId);
+  const playlistSongIds = (activePlaylist?.songIds ?? []).filter((id) => songs.some((item) => item.id === id));
+  const playlistIndex = song ? playlistSongIds.indexOf(song.id) : -1;
+  const playlistNav =
+    activePlaylist && playlistIndex >= 0
+      ? {
+          name: activePlaylist.name,
+          position: playlistIndex + 1,
+          total: playlistSongIds.length,
+          onPrevious: playlistIndex > 0 ? () => playPlaylist(activePlaylist.id, playlistSongIds[playlistIndex - 1]) : undefined,
+          onNext: playlistIndex < playlistSongIds.length - 1 ? () => playPlaylist(activePlaylist.id, playlistSongIds[playlistIndex + 1]) : undefined,
+        }
+      : undefined;
+
   const content = (
     <>
       {view === "library" ? (
@@ -817,6 +857,25 @@ export default function HomePage() {
           onPasteImport={startPasteImport}
           onImportOriginal={importOriginalFile}
           importMessage={importMessage}
+        />
+      ) : null}
+
+      {view === "playlists" ? (
+        <PlaylistsView
+          playlists={library.playlists}
+          songs={songs}
+          onCreate={(name) => changePlaylists((items) => createPlaylist(items, name, createSongId()))}
+          onRename={(id, name) => changePlaylists((items) => renamePlaylist(items, id, name))}
+          onDelete={(id) => {
+            const target = library.playlists.find((item) => item.id === id);
+            if (!target || !window.confirm(`Excluir o repertório "${target.name}"?`)) return;
+            changePlaylists((items) => deletePlaylist(items, id));
+            if (activePlaylistId === id) setActivePlaylistId(null);
+          }}
+          onAddSong={(id, songId) => changePlaylists((items) => addSongToPlaylist(items, id, songId))}
+          onRemoveSong={(id, songId) => changePlaylists((items) => removeSongFromPlaylist(items, id, songId))}
+          onMoveSong={(id, songId, direction) => changePlaylists((items) => moveSongInPlaylist(items, id, songId, direction))}
+          onPlay={(id) => playPlaylist(id)}
         />
       ) : null}
 
@@ -901,6 +960,7 @@ export default function HomePage() {
           onResetAudioPosition={resetAudioSessionPosition}
           favorite={song ? library.favorites.includes(song.id) : false}
           onFavorite={() => song && toggleFavorite(song.id)}
+          playlistNav={playlistNav}
         />
       ) : null}
 
@@ -969,6 +1029,7 @@ export default function HomePage() {
 
           <nav className="mt-7 space-y-1" aria-label="Navegação principal">
             <NavButton icon={<Library size={17} />} label="Biblioteca" active={view === "library"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("library")} />
+            <NavButton icon={<ListMusic size={17} />} label="Repertórios" active={view === "playlists"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("playlists")} />
             <NavButton
               icon={<PencilIcon />}
               label="Editor"
@@ -1833,6 +1894,7 @@ function PlayerView({
   onResetAudioPosition,
   favorite,
   onFavorite,
+  playlistNav,
 }: {
   song: Song | null;
   transpose: number;
@@ -1865,6 +1927,13 @@ function PlayerView({
   onResetAudioPosition: () => void;
   favorite: boolean;
   onFavorite: () => void;
+  playlistNav?: {
+    name: string;
+    position: number;
+    total: number;
+    onPrevious?: () => void;
+    onNext?: () => void;
+  };
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -1901,6 +1970,13 @@ function PlayerView({
   return (
     <section>
       <button type="button" className="inline-flex items-center gap-2 text-sm text-muted" onClick={onBack}><ArrowLeft size={15} /> Biblioteca</button>
+      {playlistNav ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-surface px-3 py-2 text-sm" role="group" aria-label="Navegação do repertório">
+          <span className="text-muted">Repertório {playlistNav.name}: {playlistNav.position} de {playlistNav.total}</span>
+          <button type="button" className="ml-auto rounded-xl border border-white/10 px-3 py-1.5 disabled:opacity-40" disabled={!playlistNav.onPrevious} onClick={playlistNav.onPrevious}>Música anterior</button>
+          <button type="button" className="rounded-xl bg-brand px-3 py-1.5 text-white disabled:opacity-40" disabled={!playlistNav.onNext} onClick={playlistNav.onNext}>Próxima música</button>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
