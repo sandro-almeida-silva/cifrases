@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChordSheet } from "./chord-sheet";
+import { parseChordSheet, songFromChordSheet } from "./chord-sheet";
 
 describe("parseChordSheet", () => {
   it("places chords above the lyric at the same character position", () => {
@@ -145,5 +145,38 @@ describe("parseChordSheet", () => {
       "Letra",
     );
     expect(parseChordSheet("   \n  ").sections).toEqual([]);
+  });
+});
+
+describe("songFromChordSheet", () => {
+  it("builds a song using the reviewed fields over the detected ones", () => {
+    const draft = parseChordSheet(["Título: Detectado", "Tom: D", "", "D", "Letra"].join("\n"));
+    const song = songFromChordSheet(draft, {
+      id: "song-1",
+      slug: "revisado",
+      title: "Revisado",
+      artist: "Banda",
+    });
+
+    expect(song).toMatchObject({
+      id: "song-1",
+      slug: "revisado",
+      title: "Revisado",
+      artist: "Banda",
+      key: "D",
+    });
+    expect(song.sections).toBe(draft.sections);
+  });
+
+  it("omits empty optional fields", () => {
+    const song = songFromChordSheet(parseChordSheet("Letra"), {
+      id: "song-2",
+      slug: "x",
+      title: "X",
+      artist: "  ",
+    });
+
+    expect(song).not.toHaveProperty("artist");
+    expect(song).not.toHaveProperty("key");
   });
 });

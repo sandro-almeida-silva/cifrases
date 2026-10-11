@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLibraryState, parseSongs, serializeSongs, slugify } from "./repository";
+import { parseLibraryState, parseSongs, serializeSongs, slugify, uniqueSlug } from "./repository";
 import type { Song } from "./types";
 
 const song: Song = {
@@ -43,5 +43,19 @@ describe("song repository serialization", () => {
         autoScroll: true,
       },
     });
+  });
+});
+
+describe("uniqueSlug", () => {
+  it("returns the plain slug when it is free", () => {
+    expect(uniqueSlug("Tua Graça", ["outra"])).toBe("tua-graca");
+  });
+
+  it("adds a numeric suffix when the slug is taken", () => {
+    expect(uniqueSlug("Tua Graça", ["tua-graca", "tua-graca-2"])).toBe("tua-graca-3");
+  });
+
+  it("falls back to a generic name when the title has no letters", () => {
+    expect(uniqueSlug("???", [""])).toBe("musica-2");
   });
 });
