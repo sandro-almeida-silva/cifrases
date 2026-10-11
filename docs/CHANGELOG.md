@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.20.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.19.0...v1.20.0) (2026-10-11)
+
+
+### Features
+
+* **importacao:** review pasted chord sheet before saving ([#70](https://github.com/sandro-almeida-silva/cifrases/issues/70)) ([#74](https://github.com/sandro-almeida-silva/cifrases/issues/74)) ([88449f7](https://github.com/sandro-almeida-silva/cifrases/commit/88449f7da7fbd5839e607b92bc4e5f41e491bee3))
+
 # [1.19.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.2...v1.19.0) (2026-10-11)
 
 
