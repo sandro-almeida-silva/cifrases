@@ -1971,11 +1971,11 @@ function PlayerView({
     <section>
       <button type="button" className="inline-flex items-center gap-2 text-sm text-muted" onClick={onBack}><ArrowLeft size={15} /> Biblioteca</button>
       {playlistNav ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-surface px-3 py-2 text-sm" role="group" aria-label="Navegação do repertório">
+        <nav className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-surface px-3 py-2 text-sm" aria-label="Navegação do repertório">
           <span className="text-muted">Repertório {playlistNav.name}: {playlistNav.position} de {playlistNav.total}</span>
           <button type="button" className="ml-auto rounded-xl border border-white/10 px-3 py-1.5 disabled:opacity-40" disabled={!playlistNav.onPrevious} onClick={playlistNav.onPrevious}>Música anterior</button>
           <button type="button" className="rounded-xl bg-brand px-3 py-1.5 text-white disabled:opacity-40" disabled={!playlistNav.onNext} onClick={playlistNav.onNext}>Próxima música</button>
-        </div>
+        </nav>
       ) : null}
       <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
         <div>
