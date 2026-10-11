@@ -1,5 +1,5 @@
 import { sectionFromHeading } from "./section-heading";
-import type { ChordPlacement, SongLine, SongSection } from "./types";
+import type { ChordPlacement, Song, SongLine, SongSection } from "./types";
 
 export type ChordSheetDraft = {
   title?: string;
@@ -118,4 +118,20 @@ export function parseChordSheet(source: string): ChordSheetDraft {
 
   draft.sections = sections.filter((section) => section.lines.length > 0);
   return draft;
+}
+
+export function songFromChordSheet(
+  draft: ChordSheetDraft,
+  fields: { id: string; slug: string; title: string; artist?: string; key?: string },
+): Song {
+  const artist = (fields.artist ?? draft.artist ?? "").trim();
+  const key = (fields.key ?? draft.key ?? "").trim();
+  return {
+    id: fields.id,
+    slug: fields.slug,
+    title: fields.title.trim(),
+    ...(artist ? { artist } : {}),
+    ...(key ? { key } : {}),
+    sections: draft.sections,
+  };
 }

@@ -347,3 +347,15 @@ export function clearEditorAutosave(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(EDITOR_AUTOSAVE_STORAGE_KEY);
 }
+
+export function uniqueSlug(title: string, taken: Iterable<string>): string {
+  const used = new Set(taken);
+  const base = slugify(title);
+  let slug = base;
+  let suffix = 2;
+  while (used.has(slug)) {
+    slug = base ? `${base}-${suffix}` : `musica-${suffix}`;
+    suffix += 1;
+  }
+  return slug;
+}

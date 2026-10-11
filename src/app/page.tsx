@@ -28,6 +28,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { SongImportView, type ImportFields, type ImportValues } from "@/components/import/song-import-view";
+import { SongSections, sectionName } from "@/components/song/song-sections";
 import { Select } from "@/components/ui/select";
 import {
   cloneSong,
@@ -46,13 +48,15 @@ import {
   saveLibraryState,
   saveSongs,
   slugify,
+  uniqueSlug,
   type LibraryState,
 } from "@/domain/songs/repository";
+import { type ChordSheetDraft, songFromChordSheet } from "@/domain/songs/chord-sheet";
 import { resolveTimelineEvent } from "@/domain/songs/timeline";
-import { transposeChord, transposeKey } from "@/domain/songs/transpose";
+import { transposeKey } from "@/domain/songs/transpose";
 import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType, SongTimelineEvent } from "@/domain/songs/types";
 
-type View = "library" | "editor" | "detail" | "player" | "presentation" | "settings";
+type View = "library" | "import" | "editor" | "detail" | "player" | "presentation" | "settings";
 type SortMode = "title" | "artist" | "recent";
 
 type DraftErrors = {
@@ -109,14 +113,6 @@ function chordText(chords: ChordPlacement[] | undefined): string {
   return (chords ?? []).map((item) => `${item.chord}@${item.position}`).join(" ");
 }
 
-function sectionName(section: SongSection): string {
-  return (
-    section.label ??
-    sectionTypes.find((item) => item.value === section.type)?.label ??
-    "Seção"
-  );
-}
-
 export default function HomePage() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [libraryStatus, setLibraryStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -155,6 +151,7 @@ export default function HomePage() {
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [pasteFields, setPasteFields] = useState<ImportFields>({ text: "" });
   const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
   const [draftOriginalName, setDraftOriginalName] = useState<string | null>(null);
   const [draftOriginalError, setDraftOriginalError] = useState("");
@@ -346,6 +343,33 @@ export default function HomePage() {
     setView("detail");
   }
 
+  function startPasteImport() {
+    setPasteFields({ text: "" });
+    setMobileMenu(false);
+    setView("import");
+  }
+
+  function discardPasteImport() {
+    if (pasteFields.text.trim() && !window.confirm("Descartar a cifra colada?")) return;
+    setPasteFields({ text: "" });
+    setView("library");
+  }
+
+  function savePasteImport(parsed: ChordSheetDraft, values: ImportValues) {
+    const next = songFromChordSheet(parsed, {
+      id: createSongId(),
+      slug: uniqueSlug(values.title, songs.map((item) => item.slug)),
+      title: values.title,
+      artist: values.artist,
+      key: values.key,
+    });
+    setSongs((state) => [next, ...state]);
+    setSelectedId(next.id);
+    setPasteFields({ text: "" });
+    setImportMessage("");
+    setView("player");
+  }
+
   function startNew() {
     const next = emptySong();
     setDraftOriginalUrl(null);
@@ -435,6 +459,7 @@ export default function HomePage() {
   }, [draft, view]);
 
   function navigateFromEditor(nextView: View) {
+    if (view === "import" && pasteFields.text.trim() && !window.confirm("Descartar a cifra colada?")) return;
     if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
     setView(nextView);
     setMobileMenu(false);
@@ -789,8 +814,18 @@ export default function HomePage() {
           onDelete={deleteSong}
           onFavorite={toggleFavorite}
           onNew={startNew}
+          onPasteImport={startPasteImport}
           onImportOriginal={importOriginalFile}
           importMessage={importMessage}
+        />
+      ) : null}
+
+      {view === "import" ? (
+        <SongImportView
+          fields={pasteFields}
+          onChange={(patch) => setPasteFields((state) => ({ ...state, ...patch }))}
+          onSave={savePasteImport}
+          onDiscard={discardPasteImport}
         />
       ) : null}
 
@@ -1035,6 +1070,7 @@ function LibraryView({
   onDelete,
   onFavorite,
   onNew,
+  onPasteImport,
   onImportOriginal,
   importMessage,
 }: {
@@ -1054,6 +1090,7 @@ function LibraryView({
   onDelete: (id: string) => void;
   onFavorite: (id: string) => void;
   onNew: () => void;
+  onPasteImport: () => void;
   onImportOriginal: (file: File) => void;
   importMessage: string;
 }) {
@@ -1067,6 +1104,7 @@ function LibraryView({
         </div>
         <div className="flex gap-2">
           <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onNew}>Nova</button>
+          <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onPasteImport}>Colar cifra</button>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
             <Upload size={15} /> Importar cifra
             <input className="hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => {
@@ -1960,27 +1998,14 @@ function PlayerView({
       </div>
 
       <div className={`mx-auto mt-6 w-full ${maxWidthClass} space-y-8 rounded-3xl border p-5 sm:p-8 ${preferences.highContrast ? "border-white/40 bg-black text-white" : "border-white/10 bg-surface"}`} style={{ fontSize: `${preferences.fontScale}rem` }}>
-        {song.sections.map((section) => (
-          <section key={section.id} id={`player-section-${section.id}`}>
-            <div className="mb-4 flex items-center gap-3">
-              <span className="h-px flex-1 bg-white/8" />
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">{sectionName(section)}</span>
-              <span className="h-px flex-1 bg-white/8" />
-            </div>
-            <div className="space-y-4">
-              {section.lines.map((item) => (
-                <div key={item.id} data-player-line-id={item.id} className={`rounded-2xl px-3 py-2 ${activeLineId === item.id ? "bg-brand/10 ring-1 ring-brand/20" : ""} ${preferences.highContrast ? "border border-white/20" : ""}`}>
-                  <div className="relative min-h-7 font-mono text-sm">
-                    {(item.chords ?? []).map((chord) => (
-                      <span key={`${item.id}-${chord.position}-${chord.chord}`} className={`absolute top-0 font-semibold text-chord ${preferences.highContrast ? "underline decoration-2 underline-offset-4" : ""}`} style={{ left: `${chord.position}ch` }}>{transposeChord(chord.chord, transpose)}</span>
-                    ))}
-                  </div>
-                  <p className="whitespace-pre-wrap font-medium" style={{ lineHeight: preferences.lineSpacing }}>{item.text || " "}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
+        <SongSections
+          sections={song.sections}
+          transpose={transpose}
+          lineSpacing={preferences.lineSpacing}
+          highContrast={preferences.highContrast}
+          activeLineId={activeLineId}
+          idPrefix="player-section-"
+        />
       </div>
     </section>
   );
