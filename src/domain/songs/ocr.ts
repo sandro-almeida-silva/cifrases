@@ -1,20 +1,11 @@
 import { createWorker } from "tesseract.js";
-import type { ChordPlacement, SongSection, SongSectionType } from "./types";
+import { sectionFromHeading } from "./section-heading";
+import type { ChordPlacement, SongSection } from "./types";
 
 const OCR_LOW_CONFIDENCE = 70;
 const OCR_CHORD_REVIEW_CONFIDENCE = 78;
 const MAX_PDF_PAGES = 10;
 const MAX_RENDER_WIDTH = 2500;
-
-const SECTION_PATTERNS: Array<{ type: SongSectionType; pattern: RegExp; label: string }> = [
-  { type: "intro", pattern: /^(intro|introdu[cç][aã]o)$/i, label: "Introdução" },
-  { type: "verse", pattern: /^(verso|verse)(\s+\d+)?$/i, label: "Verso" },
-  { type: "pre-chorus", pattern: /^(pr[eé]-?refr[aã]o|pre-?chorus)(\s+\d+)?$/i, label: "Pré-refrão" },
-  { type: "chorus", pattern: /^(refr[aã]o|chorus)(\s+\d+)?$/i, label: "Refrão" },
-  { type: "bridge", pattern: /^(ponte|bridge)$/i, label: "Ponte" },
-  { type: "instrumental", pattern: /^(instrumental|solo)$/i, label: "Instrumental" },
-  { type: "outro", pattern: /^(final|outro)$/i, label: "Final" },
-];
 
 const CHORD_TOKEN =
   /^[A-G](?:#|b)?(?:(?:m|min|maj|major|minor|dim|aug|sus|add|M|º|°|\+|-)?(?:2|4|5|6|7|9|11|13)?(?:sus2|sus4|add2|add4|add9|add11|add13)?)(?:\/[A-G](?:#|b)?)?$/i;
@@ -98,15 +89,6 @@ export function recognizeChords(
     chords: unique,
     reviewCount: unique.filter((item) => item.ocrNeedsReview).length,
   };
-}
-
-function sectionFromHeading(text: string): { type: SongSectionType; label: string } | null {
-  const normalized = text
-    .trim()
-    .replace(/^[\[({]|[\])}]$/g, "")
-    .replace(/\s+/g, " ");
-  const match = SECTION_PATTERNS.find((item) => item.pattern.test(normalized));
-  return match ? { type: match.type, label: match.label } : null;
 }
 
 function buildSections(lines: OcrLine[]) {
