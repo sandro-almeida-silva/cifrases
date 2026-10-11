@@ -2,6 +2,7 @@
 
 import { ArrowDown, ArrowUp, Play, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import type { PlanEntry } from "@/domain/songs/playlist-import";
 import type { Playlist } from "@/domain/songs/playlists";
 import type { Song } from "@/domain/songs/types";
 
@@ -18,6 +19,10 @@ export function PlaylistsView({
   onRemoveSong,
   onMoveSong,
   onPlay,
+  plan,
+  onImportList,
+  onImportPending,
+  onDismissPlan,
 }: {
   playlists: Playlist[];
   songs: Song[];
@@ -28,8 +33,14 @@ export function PlaylistsView({
   onRemoveSong: (id: string, songId: string) => void;
   onMoveSong: (id: string, songId: string, direction: -1 | 1) => void;
   onPlay: (id: string) => void;
+  plan: { playlistId: string; entries: PlanEntry[] } | null;
+  onImportList: (name: string, text: string) => void;
+  onImportPending: (index: number) => void;
+  onDismissPlan: () => void;
 }) {
   const [name, setName] = useState("");
+  const [listName, setListName] = useState("");
+  const [listText, setListText] = useState("");
   const byId = new Map(songs.map((song) => [song.id, song]));
 
   return (
@@ -51,6 +62,61 @@ export function PlaylistsView({
         <input id="playlist-name" className={inputClass} placeholder="Nome do repertório" value={name} onChange={(event) => setName(event.target.value)} />
         <button type="submit" className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={!name.trim()}>Criar repertório</button>
       </form>
+
+      <details className="mt-4 rounded-2xl border border-white/10 p-4" open={Boolean(plan)}>
+        <summary className="cursor-pointer text-sm font-semibold">Importar lista de músicas</summary>
+        <form
+          className="mt-3 space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!listText.trim()) return;
+            onImportList(listName, listText);
+            setListName("");
+            setListText("");
+          }}
+        >
+          <div>
+            <label htmlFor="list-name" className="text-sm font-semibold">Nome do novo repertório</label>
+            <input id="list-name" className={`mt-2 ${inputClass}`} value={listName} onChange={(event) => setListName(event.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="list-text" className="text-sm font-semibold">Lista de músicas</label>
+            <textarea
+              id="list-text"
+              className="mt-2 min-h-32 w-full rounded-xl border border-control-border bg-control-background p-3 text-sm text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50"
+              placeholder={"Uma música por linha\nTua Graça - Banda Exemplo\nBeta"}
+              value={listText}
+              onChange={(event) => setListText(event.target.value)}
+            />
+          </div>
+          <button type="submit" className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={!listText.trim()}>Criar repertório da lista</button>
+        </form>
+      </details>
+
+      {plan ? (
+        <section className="mt-4 rounded-2xl border border-white/10 bg-surface p-4" aria-label="Resultado da importação da lista">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold" role="status">
+              {plan.entries.filter((entry) => entry.songId).length} de {plan.entries.length} músicas já estão na biblioteca.
+            </p>
+            <button type="button" className="rounded-xl border border-white/10 px-3 py-1.5 text-sm" onClick={onDismissPlan}>Fechar resultado</button>
+          </div>
+          {plan.entries.some((entry) => !entry.songId) ? (
+            <ul className="mt-3 space-y-2" aria-label="Fila de importação">
+              {plan.entries.map((entry, index) =>
+                entry.songId ? null : (
+                  <li key={`${entry.title}-${index}`} className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate">{entry.title}{entry.artist ? ` (${entry.artist})` : ""}</span>
+                    <button type="button" className="rounded-xl bg-brand px-3 py-1.5 text-white" onClick={() => onImportPending(index)}>Importar cifra de {entry.title}</button>
+                  </li>
+                ),
+              )}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">Todas as músicas da lista estão no repertório.</p>
+          )}
+        </section>
+      ) : null}
 
       {playlists.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-white/10 p-6 text-sm text-muted">Nenhum repertório ainda. Crie o primeiro acima.</p>

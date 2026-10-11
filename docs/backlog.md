@@ -102,7 +102,7 @@ A lista deve evitar cores duplicadas entre labels canônicas.
 | #17 | ia | aberta | IA/OCR: reconhecer acordes e posições na cifra |
 | #18 | biblioteca | aberta | Biblioteca: busca, filtros e ordenação |
 | #19 | biblioteca | aberta | Biblioteca: favoritos e músicas recentes |
-| #20 | biblioteca | aberta | Biblioteca: playlists e repertórios |
+| #20 | biblioteca | concluída | Biblioteca: playlists e repertórios |
 | #21 | biblioteca | duplicada | Biblioteca: playlists e repertórios |
 | #22 | apresentacao | aberta | Apresentação: modo 16:9 baseado na mesma Song |
 | #23 | apresentacao | aberta | Apresentação: controle de execução e avanço |
@@ -118,6 +118,10 @@ A lista deve evitar cores duplicadas entre labels canônicas.
 | #51 | player | concluída | Player: corrigir build quebrado por prop não desestruturada |
 | #53 | player | concluída | Player: corrigir contrato de pausa do auto-scroll |
 | #57 | qualidade | aberta | Documentação: consolidar fluxo CI/CD e governança de mudanças |
+| #69 | importacao | concluída | Importação: criar rascunho de música a partir de texto de cifra colado |
+| #70 | importacao | concluída | Importação: tela de revisão do rascunho antes de salvar |
+| #71 | biblioteca | concluída | Biblioteca: importar repertório em lote a partir de lista de músicas |
+| #73 | operacao | aberta | Operação: corrigir falha do workflow Sync Issue Labels |
 
 ## Regras de organização
 
