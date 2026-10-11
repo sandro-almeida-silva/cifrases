@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.19.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.2...v1.19.0) (2026-10-11)
+
+
+### Features
+
+* **importacao:** parse pasted chord sheet text into a song draft ([#69](https://github.com/sandro-almeida-silva/cifrases/issues/69)) ([#72](https://github.com/sandro-almeida-silva/cifrases/issues/72)) ([7675ad5](https://github.com/sandro-almeida-silva/cifrases/commit/7675ad527fee4455e5e63422dafb05b0fb4c38a0))
+
 ## [1.18.2](https://github.com/sandro-almeida-silva/cifrases/compare/v1.18.1...v1.18.2) (2026-09-28)
 
 
