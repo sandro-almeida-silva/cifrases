@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.21.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.20.0...v1.21.0) (2026-10-11)
+
+
+### Features
+
+* **biblioteca:** import a playlist from a pasted song list ([#71](https://github.com/sandro-almeida-silva/cifrases/issues/71)) ([#76](https://github.com/sandro-almeida-silva/cifrases/issues/76)) ([613de70](https://github.com/sandro-almeida-silva/cifrases/commit/613de7070c6daa62789858fb8c5b4c80a1ceec64))
+
 # [1.20.0](https://github.com/sandro-almeida-silva/cifrases/compare/v1.19.0...v1.20.0) (2026-10-11)
 
 
