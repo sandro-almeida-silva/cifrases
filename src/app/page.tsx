@@ -53,6 +53,7 @@ import {
   uniqueSlug,
   type LibraryState,
 } from "@/domain/songs/repository";
+import { type PlanEntry, buildPlan, parseSongList, planSongIds, resolveEntry } from "@/domain/songs/playlist-import";
 import { type ChordSheetDraft, songFromChordSheet } from "@/domain/songs/chord-sheet";
 import {
   addSongToPlaylist,
@@ -162,6 +163,8 @@ export default function HomePage() {
   const [theme, setTheme] = useState<LibraryState["theme"]>("purple");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [batchPlan, setBatchPlan] = useState<{ playlistId: string; entries: PlanEntry[] } | null>(null);
+  const [importTarget, setImportTarget] = useState<number | null>(null);
   const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
   const [pasteFields, setPasteFields] = useState<ImportFields>({ text: "" });
   const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
@@ -369,7 +372,30 @@ export default function HomePage() {
     setView("player");
   }
 
+  function importPlaylistList(name: string, text: string) {
+    const items = parseSongList(text);
+    if (!items.length) return;
+    const entries = buildPlan(items, songs);
+    const id = createSongId();
+    changePlaylists((current) =>
+      planSongIds(entries).reduce(
+        (acc, songId) => addSongToPlaylist(acc, id, songId),
+        createPlaylist(current, name.trim() || "Repertório importado", id),
+      ),
+    );
+    setBatchPlan({ playlistId: id, entries });
+  }
+
+  function importPendingEntry(index: number) {
+    const entry = batchPlan?.entries[index];
+    if (!entry) return;
+    setImportTarget(index);
+    setPasteFields({ text: "", title: entry.title, ...(entry.artist ? { artist: entry.artist } : {}) });
+    setView("import");
+  }
+
   function startPasteImport() {
+    setImportTarget(null);
     setPasteFields({ text: "" });
     setMobileMenu(false);
     setView("import");
@@ -378,7 +404,8 @@ export default function HomePage() {
   function discardPasteImport() {
     if (pasteFields.text.trim() && !window.confirm("Descartar a cifra colada?")) return;
     setPasteFields({ text: "" });
-    setView("library");
+    setImportTarget(null);
+    setView(importTarget !== null ? "playlists" : "library");
   }
 
   function savePasteImport(parsed: ChordSheetDraft, values: ImportValues) {
@@ -393,6 +420,16 @@ export default function HomePage() {
     setSelectedId(next.id);
     setPasteFields({ text: "" });
     setImportMessage("");
+    if (importTarget !== null && batchPlan) {
+      const entries = resolveEntry(batchPlan.entries, importTarget, next.id);
+      setBatchPlan({ playlistId: batchPlan.playlistId, entries });
+      changePlaylists((current) =>
+        current.map((item) => (item.id === batchPlan.playlistId ? { ...item, songIds: planSongIds(entries) } : item)),
+      );
+      setImportTarget(null);
+      setView("playlists");
+      return;
+    }
     setView("player");
   }
 
@@ -876,6 +913,10 @@ export default function HomePage() {
           onRemoveSong={(id, songId) => changePlaylists((items) => removeSongFromPlaylist(items, id, songId))}
           onMoveSong={(id, songId, direction) => changePlaylists((items) => moveSongInPlaylist(items, id, songId, direction))}
           onPlay={(id) => playPlaylist(id)}
+          plan={batchPlan}
+          onImportList={importPlaylistList}
+          onImportPending={importPendingEntry}
+          onDismissPlan={() => setBatchPlan(null)}
         />
       ) : null}
 

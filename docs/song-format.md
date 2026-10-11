@@ -28,3 +28,12 @@ Acordes são elementos estruturados. A timeline suporta tempo absoluto e tempo m
 - Marcadores como `[Refrão]`, `Ponte:` ou `Verso 2` criam seções. Sem marcador, tudo entra em uma seção "Verso".
 - Campos `Título:`, `Artista:` e `Tom:` no topo, ou `Título - Artista` na primeira linha seguida de linha em branco, preenchem os metadados.
 - O resultado é sempre um rascunho: precisa de revisão antes de ser salvo.
+
+## Repertório a partir de lista
+
+`parseSongList`, `buildPlan`, `planSongIds` e `resolveEntry` (`src/domain/songs/playlist-import.ts`) montam um repertório a partir de uma lista de nomes:
+
+- Uma música por linha. Numeração e marcadores são removidos. `Título - Artista` separa o artista.
+- O match com a biblioteca ignora maiúsculas e acentos e usa o artista para desempatar.
+- Músicas ausentes ficam em uma fila de importação. Ao importar a cifra de uma delas, ela entra no repertório na posição original da lista.
+- Uma música aparece uma única vez no repertório, mesmo repetida na lista.
