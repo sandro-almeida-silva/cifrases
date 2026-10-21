@@ -140,13 +140,19 @@ option:hover {
 }
 
 .ui-select {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   border: 1px solid var(--control-border);
   border-radius: 0.75rem;
   background-color: var(--control-background);
   color: var(--control-foreground);
   padding: 0.5rem 2.5rem 0.5rem 0.75rem;
   color-scheme: dark;
+}
+
+@media (min-width: 640px) {
+  .ui-select {
+    min-height: 2.5rem;
+  }
 }
 
 .ui-select:hover {

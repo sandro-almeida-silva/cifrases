@@ -95,3 +95,10 @@ Padrões adotados em `playlists-view.tsx`, `web-search-panel.tsx` e `song-import
 - Confirmações (excluir música, descartar edição, descartar cifra colada) usam o `ConfirmDialog` de `src/components/ui/dialog.tsx`, aberto por `confirmThen` em `page.tsx`. Nos testes, clique no botão do diálogo (`getByRole("dialog")`), não use `page.once("dialog")`.
 - O player agrupa os ajustes em Tom, Texto e Exibição (`role="group"`), mostra o tom atual em um `<output>` e permite ocultar o painel (`aria-expanded`).
 - Há um teste de área de toque (≥44px) que só roda no projeto `mobile-chrome`.
+
+## Editor (#80)
+
+- Cada linha é um `role="group"` ("Linha N da seção M") dentro de uma região por seção ("Seção N: nome"); os nomes de mover/remover continuam únicos por seção e linha.
+- Ao salvar com erro, o editor mostra um `role="alert"` com a contagem e foca o primeiro campo com `aria-invalid="true"`. Campos de seção e linha ligam o erro com `aria-describedby`.
+- Adicionar, mover e remover são anunciados em `data-testid="editor-announcer"` e mantêm o foco (nova seção → nome; nova linha → letra; mover → controle da própria seção, ou o oposto no limite; remover linha → "Linha"; remover seção → "Seção").
+- Salvar e Cancelar ficam numa barra fixa no rodapé. O `.ui-select`, o `inputClass` e os botões têm pelo menos 44px no celular.

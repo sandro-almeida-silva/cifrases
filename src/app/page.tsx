@@ -114,7 +114,7 @@ const sectionTypes: Array<{ value: SongSectionType; label: string }> = [
 ];
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-control-border bg-control-background px-3 text-sm text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50 focus:bg-control-background-hover";
+  "h-11 w-full rounded-xl border border-control-border bg-control-background px-3 text-sm text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50 focus:bg-control-background-hover sm:h-10";
 
 function line(id: string): SongLine {
   return { id, text: "", chords: [] };
@@ -1108,7 +1108,7 @@ export default function HomePage() {
           <button
             type="button"
             className={[
-              "mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:brightness-105",
+              "mt-8 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:brightness-105",
               desktopSidebarCollapsed ? "lg:size-11 lg:rounded-2xl lg:p-0" : "",
             ].join(" ")}
             onClick={startNew}
@@ -1415,6 +1415,41 @@ function EditorView({
   autosaveStatus: "idle" | "saved" | "recovered";
   onTimelineUpdate: (patch: Partial<Song["timeline"]>) => void;
 }) {
+  const root = useRef<HTMLElement | null>(null);
+  const pendingFocus = useRef<string[] | null>(null);
+  const saveAttempted = useRef(false);
+  const [announcement, setAnnouncement] = useState("");
+
+  // Mantém o foco coerente depois de adicionar, mover ou remover: o elemento pode
+  // ser remontado ou ficar desabilitado no limite da lista.
+  useEffect(() => {
+    const wanted = pendingFocus.current;
+    if (!wanted) return;
+    pendingFocus.current = null;
+    for (const id of wanted) {
+      const matches = root.current?.querySelectorAll<HTMLElement>(`[data-focus="${id}"]`);
+      const element = matches?.[matches.length - 1];
+      if (element && !(element as HTMLButtonElement).disabled) {
+        element.focus();
+        return;
+      }
+    }
+  });
+
+  // Ao tentar salvar com erros, leva o foco ao primeiro campo inválido.
+  useEffect(() => {
+    if (!saveAttempted.current) return;
+    saveAttempted.current = false;
+    root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [errors]);
+
+  function say(message: string, focus?: string[]) {
+    setAnnouncement(message);
+    if (focus) pendingFocus.current = focus;
+  }
+
+  const errorCount = Object.keys(errors).filter((key) => errors[key]).length;
+
   function changeSection(sectionId: string, updater: (section: SongSection) => SongSection) {
     setSong({
       ...song,
@@ -1432,20 +1467,24 @@ function EditorView({
   }
 
   return (
-    <section>
-      <div className="flex items-end justify-between gap-4">
+    <section ref={root}>
+      <div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Editor</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">{mode === "edit" ? "Editar música" : "Cadastrar música"}</h1>
-          <p className="mt-2 text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
-          <p className="mt-2 text-xs text-muted" role="status">{autosaveStatus === "saved" ? "Rascunho salvo localmente." : autosaveStatus === "recovered" ? "Rascunho recuperado do armazenamento local." : "Autosave local ativo durante a edição."}</p>
-          {dirty ? <span className="mt-2 inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null}
-        </div>
-        <div className="flex gap-2">
-          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white" onClick={onSave}><Save size={15} /> Salvar</button>
+          <p className="mt-2 max-w-2xl text-sm text-muted">Preencha os dados e monte a estrutura da música antes de salvar.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-muted" role="status">{autosaveStatus === "saved" ? "Rascunho salvo localmente." : autosaveStatus === "recovered" ? "Rascunho recuperado do armazenamento local." : "Autosave local ativo durante a edição."}</p>
+            {dirty ? <span className="inline-flex rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Alterações não salvas</span> : null}
+          </div>
         </div>
       </div>
+      <p aria-live="polite" aria-atomic="true" className="sr-only" data-testid="editor-announcer">{announcement}</p>
+      {errorCount > 0 ? (
+        <div role="alert" className="mt-5 rounded-2xl border border-red-400/40 bg-red-400/5 p-4 text-sm text-red-200">
+          Corrija {errorCount === 1 ? "1 campo" : `${errorCount} campos`} antes de salvar. O primeiro campo com erro está em foco.
+        </div>
+      ) : null}
 
       {song.media?.original ? (
         <OriginalImportPreview
@@ -1457,7 +1496,7 @@ function EditorView({
         />
       ) : null}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
           ["Título", song.title, (value: string) => setSong({ ...song, title: value }), "title"],
           ["Artista", song.artist ?? "", (value: string) => setSong({ ...song, artist: value }), "artist"],
@@ -1471,6 +1510,9 @@ function EditorView({
               className={`${inputClass} ${errors[field as string] ? "border-red-400/60" : ""}`}
               value={value as string}
               type={field === "bpm" ? "number" : "text"}
+              inputMode={field === "bpm" ? "numeric" : undefined}
+              autoComplete="off"
+              placeholder={field === "key" ? "Ex.: G, Am" : undefined}
               min={field === "bpm" ? 1 : undefined}
               max={field === "bpm" ? 300 : undefined}
               onChange={(event) => (update as (value: string) => void)(event.target.value)}
@@ -1482,7 +1524,7 @@ function EditorView({
         ))}
       </div>
 
-      {errors.sections ? <p className="mt-4 text-sm text-red-300">{errors.sections}</p> : null}
+      {errors.sections ? <p className="mt-4 text-sm text-red-300" id="sections-error">{errors.sections}</p> : null}
 
       {song.media?.original ? (
         <div className="mt-5 rounded-2xl border border-brand/20 bg-brand/5 p-4">
@@ -1493,7 +1535,7 @@ function EditorView({
             </div>
             <button
               type="button"
-              className="rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:min-h-10"
               onClick={onExtractOcr}
               disabled={ocrState.status === "running"}
             >
@@ -1527,9 +1569,9 @@ function EditorView({
             <p className="font-semibold">Áudio</p>
             <p className="mt-1 text-xs text-muted">Arquivo associado à música para reprodução local.</p>
           </div>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
-            <AudioLines size={15} /> Anexar áudio
-            <input className="hidden" type="file" accept="audio/*" onChange={(event) => {
+          <label className={`${touchButton} cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-brand-soft`}>
+            <AudioLines size={15} aria-hidden /> Anexar áudio
+            <input className="sr-only" type="file" accept="audio/*" onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) onAttachAudio(file);
               event.currentTarget.value = "";
@@ -1539,85 +1581,101 @@ function EditorView({
         {song.media?.audioUrl ? <p className="mt-3 text-xs text-brand-soft">Áudio anexado.</p> : null}
       </div>
 
-      <div className="mt-6 space-y-4">
+      <p className="mt-6 text-xs text-muted">Acordes: informe o nome e a posição do caractere, separados por @ (ex.: G@0 C@20 D@35).</p>
+      <div className="mt-3 space-y-4">
         {song.sections.map((section, sectionIndex) => (
-          <div key={section.id} className="rounded-3xl border border-white/10 bg-surface p-4">
+          <section key={section.id} aria-label={`Seção ${sectionIndex + 1}${section.label ? `: ${section.label}` : ""}`} className="rounded-3xl border border-white/10 bg-surface p-4">
             <div className="flex flex-wrap items-center gap-2">
               <Select
                 value={section.type}
                 options={sectionTypes}
                 onChange={(value) => changeSection(section.id, (current) => ({ ...current, type: value }))}
                 ariaLabel={`Tipo da seção ${sectionIndex + 1}`}
-                className="w-40 shrink-0"
+                className="w-full shrink-0 sm:w-40"
               />
               <input
-                className={`${inputClass} ${errors[`section-${section.id}`] ? "border-red-400/60" : ""}`}
+                data-focus="section-name"
+                className={`${inputClass} min-w-0 basis-full sm:basis-0 sm:flex-1 ${errors[`section-${section.id}`] ? "border-red-400/60" : ""}`}
                 aria-label={`Nome da seção ${sectionIndex + 1}`}
                 aria-invalid={Boolean(errors[`section-${section.id}`])}
+                aria-describedby={errors[`section-${section.id}`] ? `section-${section.id}-error` : undefined}
                 value={section.label ?? ""}
                 onChange={(event) => changeSection(section.id, (current) => ({ ...current, label: event.target.value }))}
               />
-              <span className="text-xs text-muted">#{sectionIndex + 1}</span>
+              <span className="text-xs text-muted" aria-hidden>#{sectionIndex + 1}</span>
               <div className="ml-auto flex gap-1">
-                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30" onClick={() => onMoveSection(section.id, -1)} disabled={sectionIndex === 0} aria-label={`Mover seção ${sectionIndex + 1} para cima`}><ArrowUp size={15} /></button>
-                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30" onClick={() => onMoveSection(section.id, 1)} disabled={sectionIndex === song.sections.length - 1} aria-label={`Mover seção ${sectionIndex + 1} para baixo`}><ArrowDown size={15} /></button>
-                <button type="button" className="rounded-lg p-2 text-muted disabled:opacity-30 hover:text-red-200" onClick={() => onRemoveSection(section.id)} disabled={song.sections.length <= 1} aria-label={`Remover seção ${sectionIndex + 1}`}><Trash2 size={15} /></button>
+                <button type="button" data-focus={`sec-up-${section.id}`} className={`${touchIcon} disabled:opacity-30`} onClick={() => { onMoveSection(section.id, -1); say(`Seção ${sectionIndex + 1} movida para cima.`, [`sec-up-${section.id}`, `sec-down-${section.id}`]); }} disabled={sectionIndex === 0} aria-label={`Mover seção ${sectionIndex + 1} para cima`}><ArrowUp size={16} aria-hidden /></button>
+                <button type="button" data-focus={`sec-down-${section.id}`} className={`${touchIcon} disabled:opacity-30`} onClick={() => { onMoveSection(section.id, 1); say(`Seção ${sectionIndex + 1} movida para baixo.`, [`sec-down-${section.id}`, `sec-up-${section.id}`]); }} disabled={sectionIndex === song.sections.length - 1} aria-label={`Mover seção ${sectionIndex + 1} para baixo`}><ArrowDown size={16} aria-hidden /></button>
+                <button type="button" className={`${touchIcon} disabled:opacity-30 hover:text-red-300`} onClick={() => { onRemoveSection(section.id); say(`Seção ${sectionIndex + 1} removida.`, ["add-section"]); }} disabled={song.sections.length <= 1} aria-label={`Remover seção ${sectionIndex + 1}`}><Trash2 size={16} aria-hidden /></button>
               </div>
             </div>
-            {errors[`section-${section.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`section-${section.id}`]}</span> : null}
+            {errors[`section-${section.id}`] ? <span id={`section-${section.id}-error`} className="mt-1 block text-xs text-red-300">{errors[`section-${section.id}`]}</span> : null}
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-3">
               {section.lines.map((item, lineIndex) => (
-                <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_260px_auto]">
-                  <div>
+                <div key={item.id} role="group" aria-label={`Linha ${lineIndex + 1} da seção ${sectionIndex + 1}`} className="rounded-xl border border-white/10 bg-background/40 p-3">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="mr-auto text-xs font-semibold text-muted" aria-hidden>Linha {lineIndex + 1}</span>
                     {item.ocrConfidence !== undefined && item.ocrConfidence < 70 ? (
-                      <span className="mb-1 inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
+                      <span className="inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
                         Baixa confiança: {item.ocrConfidence}%
                       </span>
                     ) : null}
-                    <input
-                      className={`${inputClass} ${item.ocrConfidence !== undefined && item.ocrConfidence < 70 ? "border-amber-400/50" : ""} ${errors[`line-${item.id}`] ? "border-red-400/60" : ""}`}
-                      aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
-                      placeholder="Letra"
-                      value={item.text}
-                      onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, text: event.target.value }))}
-                    />
-                    {errors[`line-${item.id}`] ? <span className="mt-1 block text-xs text-red-300">{errors[`line-${item.id}`]}</span> : null}
-                  </div>
-                  <div>
                     {item.chords?.some((chord) => chord.ocrNeedsReview) ? (
-                      <span className="mb-1 inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
+                      <span className="inline-flex rounded-full bg-amber-400/10 px-2 py-1 text-[11px] font-semibold text-amber-200">
                         Acorde(s) para revisar
                       </span>
                     ) : null}
+                    <button type="button" data-focus={`line-up-${item.id}`} className={`${touchIcon} disabled:opacity-30`} onClick={() => { onMoveLine(section.id, item.id, -1); say(`Linha ${lineIndex + 1} movida para cima.`, [`line-up-${item.id}`, `line-down-${item.id}`]); }} disabled={lineIndex === 0} aria-label={`Mover linha ${lineIndex + 1} para cima`}><ArrowUp size={16} aria-hidden /></button>
+                    <button type="button" data-focus={`line-down-${item.id}`} className={`${touchIcon} disabled:opacity-30`} onClick={() => { onMoveLine(section.id, item.id, 1); say(`Linha ${lineIndex + 1} movida para baixo.`, [`line-down-${item.id}`, `line-up-${item.id}`]); }} disabled={lineIndex === section.lines.length - 1} aria-label={`Mover linha ${lineIndex + 1} para baixo`}><ArrowDown size={16} aria-hidden /></button>
+                    <button type="button" className={`${touchIcon} hover:text-red-300`} onClick={() => { onRemoveLine(section.id, item.id); say(`Linha ${lineIndex + 1} removida.`, [`add-line-${section.id}`]); }} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={16} aria-hidden /></button>
+                  </div>
+                  <div className="mt-2 grid gap-2 md:grid-cols-[1fr_260px]">
+                    <div>
+                      <input
+                        data-focus={`line-input-${section.id}`}
+                        className={`${inputClass} ${item.ocrConfidence !== undefined && item.ocrConfidence < 70 ? "border-amber-400/50" : ""} ${errors[`line-${item.id}`] ? "border-red-400/60" : ""}`}
+                        aria-label={`Letra da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
+                        aria-invalid={Boolean(errors[`line-${item.id}`])}
+                        aria-describedby={errors[`line-${item.id}`] ? `line-${item.id}-error` : undefined}
+                        placeholder="Letra"
+                        value={item.text}
+                        onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, text: event.target.value }))}
+                      />
+                      {errors[`line-${item.id}`] ? <span id={`line-${item.id}-error`} className="mt-1 block text-xs text-red-300">{errors[`line-${item.id}`]}</span> : null}
+                    </div>
                     <input
                       className={`${inputClass} font-mono text-chord`}
                       aria-label={`Acordes da linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}
+                      autoComplete="off"
+                      spellCheck={false}
                       placeholder="G@0 C@20 D@35"
                       value={chordText(item.chords)}
                       onChange={(event) => changeLine(section.id, item.id, (current) => ({ ...current, chords: parseChords(event.target.value) }))}
                     />
                   </div>
-                  <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, -1)} disabled={lineIndex === 0} aria-label={`Mover linha ${lineIndex + 1} para cima`}><ArrowUp size={14} /></button>
-                  <button type="button" className="rounded-lg border border-white/10 p-2 text-muted disabled:opacity-30" onClick={() => onMoveLine(section.id, item.id, 1)} disabled={lineIndex === section.lines.length - 1} aria-label={`Mover linha ${lineIndex + 1} para baixo`}><ArrowDown size={14} /></button>
-                  <button type="button" className="rounded-xl border border-white/10 px-3 text-muted hover:text-red-200" onClick={() => onRemoveLine(section.id, item.id)} aria-label={`Remover linha ${lineIndex + 1} da seção ${sectionIndex + 1}`}><X size={15} /></button>
                 </div>
               ))}
               {errors[`lines-${section.id}`] ? <p className="text-xs text-red-300">{errors[`lines-${section.id}`]}</p> : null}
             </div>
 
-            <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2 text-sm text-muted" onClick={() => onAddLine(section.id)}>
-              <Plus size={15} /> Linha
+            <button type="button" data-focus={`add-line-${section.id}`} className={`${touchButton} mt-3 border-dashed text-muted`} onClick={() => { onAddLine(section.id); say(`Linha adicionada à seção ${sectionIndex + 1}.`, [`line-input-${section.id}`]); }}>
+              <Plus size={15} aria-hidden /> Linha
             </button>
-          </div>
+          </section>
         ))}
       </div>
 
       <TimelineEditor song={song} onUpdate={onTimelineUpdate} />
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onAddSection}><Plus size={15} /> Seção</button>
-        <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBuildTimeline}><AudioLines size={15} /> Timeline inicial</button>
+        <button type="button" data-focus="add-section" className={touchButton} onClick={() => { onAddSection(); say("Seção adicionada.", ["section-name"]); }}><Plus size={15} aria-hidden /> Seção</button>
+        <button type="button" className={touchButton} onClick={onBuildTimeline}><AudioLines size={15} aria-hidden /> Timeline inicial</button>
+      </div>
+
+      <div className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 bg-background/95 py-3 backdrop-blur">
+        <button type="button" className={touchButton} onClick={onCancel}>Cancelar</button>
+        <button type="button" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-white sm:min-h-10" onClick={() => { saveAttempted.current = true; onSave(); }}><Save size={15} aria-hidden /> Salvar</button>
       </div>
     </section>
   );

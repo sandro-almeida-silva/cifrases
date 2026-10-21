@@ -29,7 +29,8 @@ export function Select<T extends string>({
   const [highlightedValue, setHighlightedValue] = useState(value);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const listboxId = useId();
-  const selected = options.find((option) => option.value === value) ?? options[0];
+  const selected =
+    options.find((option) => option.value === value) ?? options[0];
   const highlightedIndex = Math.max(
     0,
     options.findIndex((option) => option.value === highlightedValue),
@@ -127,7 +128,9 @@ export function Select<T extends string>({
         }}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span className="min-w-0 truncate">{selected?.label ?? "Selecionar"}</span>
+        <span className="min-w-0 truncate">
+          {selected?.label ?? "Selecionar"}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
@@ -152,7 +155,7 @@ export function Select<T extends string>({
                 type="button"
                 role="option"
                 aria-selected={selectedOption}
-                className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                className={`flex min-h-11 w-full sm:min-h-10 items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                   highlighted
                     ? "bg-brand/15 text-foreground"
                     : "text-foreground hover:bg-control-background-hover"
@@ -161,7 +164,12 @@ export function Select<T extends string>({
                 onClick={() => selectValue(option.value)}
               >
                 <span>{option.label}</span>
-                {selectedOption ? <Check aria-hidden="true" className="size-4 text-brand-soft" /> : null}
+                {selectedOption ? (
+                  <Check
+                    aria-hidden="true"
+                    className="size-4 text-brand-soft"
+                  />
+                ) : null}
               </button>
             );
           })}
