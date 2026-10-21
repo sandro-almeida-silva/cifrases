@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, CircleDashed, Loader2, Search, X } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  CircleDashed,
+  Loader2,
+  Search,
+  X,
+} from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { parseChordSheet } from "@/domain/songs/chord-sheet";
 import {
@@ -19,7 +26,7 @@ export type WebImportResult = {
 };
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-control-border bg-control-background px-3 text-sm text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50 focus:bg-control-background-hover";
+  "h-11 w-full rounded-xl border border-control-border bg-control-background px-3 text-sm sm:h-10 text-foreground outline-none placeholder:text-control-placeholder focus:border-brand/50 focus:bg-control-background-hover";
 
 type FetchError = { step?: "fetch" | "extract"; error?: string };
 
@@ -195,27 +202,33 @@ export function WebSearchPanel({
   }
 
   const failed = steps?.some((step) => step.status === "failed") ?? false;
+  const showSteps = steps !== null;
 
   return (
     <section
       aria-label="Buscar cifra na internet"
-      className="rounded-3xl border border-white/10 bg-surface p-5"
+      className="rounded-3xl border border-white/10 bg-surface p-4 sm:p-5"
     >
       <h2 className="text-lg font-bold">Buscar na internet</h2>
       <p className="mt-1 text-sm text-muted">
-        Pesquise por música ou artista, escolha o resultado e a cifra é
-        importada para revisão.
+        Pesquise por música ou artista, escolha um resultado e a cifra vai para
+        revisão. Nada é salvo antes da sua confirmação.
       </p>
 
-      <form className="mt-4 flex gap-2" onSubmit={search}>
-        <div className="min-w-0 flex-1">
-          <label htmlFor="web-search-term" className="sr-only">
+      <form
+        className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end"
+        onSubmit={search}
+      >
+        <div>
+          <label htmlFor="web-search-term" className="text-sm font-semibold">
             Buscar cifra
           </label>
           <input
             id="web-search-term"
-            className={inputClass}
+            className={`mt-2 ${inputClass}`}
             type="search"
+            enterKeyHint="search"
+            autoComplete="off"
             placeholder="Ex.: evidências chitãozinho"
             value={term}
             onChange={(event) => setTerm(event.target.value)}
@@ -224,53 +237,100 @@ export function WebSearchPanel({
         </div>
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-white sm:min-h-10"
           disabled={busy || term.trim().length < 2}
         >
-          <Search className="size-4" aria-hidden /> Buscar
+          {busy && !chosen ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Search className="size-4" aria-hidden />
+          )}
+          Buscar
         </button>
       </form>
 
       {results?.length ? (
-        <ul className="mt-4 space-y-2" aria-label="Resultados da busca">
-          {results.map((item) => (
-            <li key={item.url}>
-              <button
-                type="button"
-                className="flex w-full flex-col rounded-xl border border-control-border px-3 py-2 text-left hover:bg-control-background-hover disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => choose(item)}
-                disabled={busy}
-                aria-label={`Importar ${item.title}${item.artist ? ` — ${item.artist}` : ""}`}
-              >
-                <span className="text-sm font-semibold">{item.title}</span>
-                {item.artist ? (
-                  <span className="text-xs text-muted">{item.artist}</span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-5">
+          <h3 id="web-results-title" className="text-sm font-semibold">
+            {results.length === 1
+              ? "1 resultado"
+              : `${results.length} resultados`}
+            <span className="font-normal text-muted">
+              {" "}
+              · toque em um para importar
+            </span>
+          </h3>
+          <ul className="mt-2 space-y-2" aria-labelledby="web-results-title">
+            {results.map((item) => {
+              const active = chosen?.url === item.url;
+              return (
+                <li key={item.url}>
+                  <button
+                    type="button"
+                    className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left hover:bg-control-background-hover disabled:cursor-not-allowed ${active ? "border-brand bg-control-background" : "border-control-border"}`}
+                    onClick={() => choose(item)}
+                    disabled={busy}
+                    aria-label={`Importar ${item.title}${item.artist ? ` — ${item.artist}` : ""}`}
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="break-words text-sm font-semibold">
+                        {item.title}
+                      </span>
+                      {item.artist ? (
+                        <span className="break-words text-xs text-muted">
+                          {item.artist}
+                        </span>
+                      ) : null}
+                    </span>
+                    {busy && active ? (
+                      <Loader2
+                        className="size-4 shrink-0 animate-spin text-brand-soft"
+                        aria-hidden
+                      />
+                    ) : (
+                      <ChevronRight
+                        className="size-4 shrink-0 text-muted"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : null}
 
-      {steps ? (
-        <div className="mt-4" aria-live="polite">
-          <p className="text-sm font-semibold">Progresso da importação</p>
-          <ol className="mt-2 space-y-2" aria-label="Etapas da importação">
+      {showSteps ? (
+        <div
+          className="mt-5 rounded-2xl border border-white/10 bg-background/60 p-4"
+          aria-live="polite"
+          aria-atomic="false"
+          aria-busy={busy}
+        >
+          <h3 className="text-sm font-semibold">Progresso da importação</h3>
+          <ol className="mt-3 space-y-3" aria-label="Etapas da importação">
             {steps.map((step) => (
               <li
                 key={step.id}
-                className="flex items-start gap-2 text-sm"
+                className="flex items-start gap-3 text-sm"
                 data-status={step.status}
               >
-                <span className="mt-0.5">
+                <span
+                  className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border ${step.status === "failed" ? "border-red-500/60" : step.status === "done" ? "border-green-500/60" : "border-control-border"}`}
+                >
                   <StepIcon status={step.status} />
                 </span>
-                <span>
-                  <span className="font-medium">{step.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`font-medium ${step.status === "pending" ? "text-muted" : ""}`}
+                  >
+                    {step.label}
+                  </span>
                   <span className="sr-only"> — {STATUS_TEXT[step.status]}</span>
                   {step.message ? (
                     <span
-                      className={`block text-xs ${step.status === "failed" ? "text-red-500" : "text-muted"}`}
+                      className={`block break-words text-xs ${step.status === "failed" ? "text-red-400" : "text-muted"}`}
                     >
                       {step.message}
                     </span>
@@ -280,10 +340,10 @@ export function WebSearchPanel({
             ))}
           </ol>
           {failed ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
-                className="rounded-xl border border-control-border px-3 py-1.5 text-sm hover:bg-control-background-hover"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/5 sm:min-h-10"
                 onClick={() => (chosen ? choose(chosen) : search())}
                 disabled={busy}
               >

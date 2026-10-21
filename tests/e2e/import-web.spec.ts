@@ -65,6 +65,9 @@ test.describe("Importação de cifra pesquisada na internet", () => {
     for (const item of await steps.getByRole("listitem").all()) {
       await expect(item).toHaveAttribute("data-status", "done");
     }
+    await expect(
+      p.getByRole("heading", { name: "Revise e salve" }),
+    ).toBeFocused();
     await expect(p.getByLabel("Título", { exact: true })).toHaveValue(
       "Evidências",
     );

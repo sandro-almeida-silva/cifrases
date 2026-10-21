@@ -78,3 +78,13 @@ Nenhuma alteração deve desabilitar typecheck ou contornar os testes para obter
 - O domínio (`web-import.ts`) é testado com HTML de exemplo, sem rede.
 - Os testes E2E (`tests/e2e/import-web.spec.ts`) simulam `/api/import/search` e `/api/import/fetch` com `page.route` e usam `serviceWorkers: "block"`, pois o service worker do app interceptaria o `fetch` antes da simulação.
 - Nenhum teste automatizado acessa sites reais. A validação contra o site de origem é manual, porque o HTML da fonte pode mudar.
+
+## Acessibilidade de repertórios e importação
+
+Padrões adotados em `playlists-view.tsx`, `web-search-panel.tsx` e `song-import-view.tsx`; os testes E2E dependem deles:
+
+- **Diálogos próprios** (`src/components/ui/dialog.tsx`, sobre `<dialog>` nativo) no lugar de `window.prompt`/`confirm` para renomear e excluir repertórios e blocos. Foco preso, Esc fecha, o foco volta ao botão que abriu e, em ações destrutivas, o foco inicial fica em "Cancelar".
+- **Anúncios**: mudanças de estado (música movida, bloco criado, etapa da importação) vão para regiões `aria-live` (`data-testid="playlist-announcer"` nos repertórios).
+- **Foco**: depois de mover uma música ou bloco o foco volta ao controle usado (ou ao botão oposto no limite da lista); depois de importar da internet o foco vai para o cabeçalho "Revise e salve".
+- **Alvos de toque**: botões e seletores têm pelo menos 44px no mobile (`min-h-11`/`size-11`) e 36–40px no desktop.
+- **Movimento**: `prefers-reduced-motion` desliga animações em `globals.css`.

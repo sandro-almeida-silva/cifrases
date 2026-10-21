@@ -139,10 +139,16 @@ test.describe("Blocos em repertórios", () => {
       .getByLabel("Bloco de Alfa")
       .selectOption({ label: "Aquecimento" });
 
-    page.once("dialog", (dialog) => dialog.accept("Abertura"));
     await card
       .getByRole("button", { name: "Renomear bloco Aquecimento" })
       .click();
+    const rename = page.getByRole("dialog", { name: "Renomear bloco" });
+    const nameField = rename.getByLabel("Novo nome do bloco");
+    await expect(nameField).toBeFocused();
+    await expect(nameField).toHaveValue("Aquecimento");
+    await nameField.fill("Abertura");
+    await rename.getByRole("button", { name: "Salvar nome" }).click();
+    await expect(rename).toBeHidden();
     await expect(
       card
         .getByRole("region", { name: "Bloco Abertura" })
@@ -152,10 +158,77 @@ test.describe("Blocos em repertórios", () => {
       card.getByRole("region", { name: "Bloco Aquecimento" }),
     ).toHaveCount(0);
 
-    page.once("dialog", (dialog) => dialog.accept());
     await card.getByRole("button", { name: "Excluir bloco Abertura" }).click();
+    const confirm = page.getByRole("dialog", {
+      name: /Excluir o bloco "Abertura"/,
+    });
+    await expect(
+      confirm.getByRole("button", { name: "Cancelar" }),
+    ).toBeFocused();
+    await confirm.getByRole("button", { name: "Excluir bloco" }).click();
+    await expect(confirm).toBeHidden();
     await expect(card.getByRole("region", { name: /^Bloco/ })).toHaveCount(0);
     await expect(card.getByRole("listitem")).toHaveText([/Alfa/]);
+  });
+
+  test("os diálogos fecham com Esc e devolvem o foco, sem alterar nada", async ({
+    page,
+  }) => {
+    const card = await createPlaylist(page, "Foco", ["Alfa"]);
+    await addBlock(card, "Foco", "Bloco um");
+
+    const trigger = card.getByRole("button", {
+      name: "Excluir bloco Bloco um",
+    });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: /Excluir o bloco/ });
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expect(
+      card.getByRole("region", { name: "Bloco Bloco um" }),
+    ).toBeVisible();
+  });
+
+  test("anuncia as mudanças e mantém o foco ao mover uma música", async ({
+    page,
+  }) => {
+    const card = await createPlaylist(page, "Anuncios", ["Alfa", "Beta"]);
+    await expect(page.getByTestId("playlist-announcer")).toContainText(
+      "Beta adicionada ao repertório Anuncios.",
+    );
+
+    await card.getByRole("button", { name: "Subir Beta" }).click();
+    await expect(card.getByRole("listitem")).toHaveText([/Beta/, /Alfa/]);
+    await expect(page.getByTestId("playlist-announcer")).toContainText(
+      "Beta movida para cima.",
+    );
+    // Beta chegou ao topo: o botão de subir fica desabilitado e o foco passa ao de descer.
+    await expect(
+      card.getByRole("button", { name: "Descer Beta" }),
+    ).toBeFocused();
+  });
+
+  test("excluir repertório pede confirmação e o cancelamento não exclui", async ({
+    page,
+  }) => {
+    const card = await createPlaylist(page, "Temporário", ["Alfa"]);
+    await card
+      .getByRole("button", { name: "Excluir repertório Temporário" })
+      .click();
+    const dialog = page.getByRole("dialog", {
+      name: /Excluir o repertório "Temporário"/,
+    });
+    await dialog.getByRole("button", { name: "Cancelar" }).click();
+    await expect(card).toBeVisible();
+
+    await card
+      .getByRole("button", { name: "Excluir repertório Temporário" })
+      .click();
+    await dialog.getByRole("button", { name: "Excluir repertório" }).click();
+    await expect(card).toHaveCount(0);
+    await expect(page.getByLabel("Nome do repertório")).toBeFocused();
   });
 
   test("rejeita nome de bloco vazio", async ({ page }) => {

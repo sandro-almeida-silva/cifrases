@@ -909,8 +909,6 @@ export default function HomePage() {
           onCreate={(name) => changePlaylists((items) => createPlaylist(items, name, createSongId()))}
           onRename={(id, name) => changePlaylists((items) => renamePlaylist(items, id, name))}
           onDelete={(id) => {
-            const target = library.playlists.find((item) => item.id === id);
-            if (!target || !window.confirm(`Excluir o repertório "${target.name}"?`)) return;
             changePlaylists((items) => deletePlaylist(items, id));
             if (activePlaylistId === id) setActivePlaylistId(null);
           }}
@@ -919,11 +917,7 @@ export default function HomePage() {
           onMoveSong={(id, songId, direction) => changePlaylists((items) => moveSongInPlaylist(items, id, songId, direction))}
           onAddBlock={(id, name) => changePlaylists((items) => addBlockToPlaylist(items, id, name, createSongId()))}
           onRenameBlock={(id, blockId, name) => changePlaylists((items) => renameBlockInPlaylist(items, id, blockId, name))}
-          onRemoveBlock={(id, blockId) => {
-            const block = library.playlists.find((item) => item.id === id)?.blocks?.find((item) => item.id === blockId);
-            if (!block || !window.confirm(`Excluir o bloco "${block.name}"? As músicas continuam no repertório, sem bloco.`)) return;
-            changePlaylists((items) => removeBlockFromPlaylist(items, id, blockId));
-          }}
+          onRemoveBlock={(id, blockId) => changePlaylists((items) => removeBlockFromPlaylist(items, id, blockId))}
           onMoveBlock={(id, blockId, direction) => changePlaylists((items) => moveBlockInPlaylist(items, id, blockId, direction))}
           onAssignSong={(id, songId, blockId) => changePlaylists((items) => assignSongToBlock(items, id, songId, blockId))}
           onPlay={(id) => playPlaylist(id)}
