@@ -72,3 +72,9 @@ pnpm check
 Para PRs exclusivamente documentais, o CI usa um caminho rápido que valida o diff sem instalar dependências nem executar a suíte pesada.
 
 Nenhuma alteração deve desabilitar typecheck ou contornar os testes para obter um build verde.
+
+## Importação da internet
+
+- O domínio (`web-import.ts`) é testado com HTML de exemplo, sem rede.
+- Os testes E2E (`tests/e2e/import-web.spec.ts`) simulam `/api/import/search` e `/api/import/fetch` com `page.route` e usam `serviceWorkers: "block"`, pois o service worker do app interceptaria o `fetch` antes da simulação.
+- Nenhum teste automatizado acessa sites reais. A validação contra o site de origem é manual, porque o HTML da fonte pode mudar.
