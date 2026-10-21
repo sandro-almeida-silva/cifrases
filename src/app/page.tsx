@@ -11,7 +11,9 @@ import {
   Heart,
   Library,
   ListMusic,
+  Maximize,
   Menu,
+  Minimize,
   Pause,
   Pencil,
   Play,
@@ -71,6 +73,7 @@ import {
   renamePlaylist,
   type Playlist,
 } from "@/domain/songs/playlists";
+import { type Slide, buildSlides, clampSlideIndex, slideIndexForKey } from "@/domain/songs/presentation";
 import { resolveTimelineEvent } from "@/domain/songs/timeline";
 import { transposeKey } from "@/domain/songs/transpose";
 import type { ChordPlacement, Song, SongLine, SongSection, SongSectionType, SongTimelineEvent } from "@/domain/songs/types";
@@ -1062,6 +1065,7 @@ export default function HomePage() {
           index={presentationSection}
           onIndex={setPresentationSection}
           onBack={() => setView("player")}
+          onLibrary={() => navigateFromEditor("library")}
         />
       ) : null}
 
@@ -2287,38 +2291,154 @@ function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
 }
 
-function PresentationView({ song, index, onIndex, onBack }: { song: Song | null; index: number; onIndex: (value: number) => void; onBack: () => void }) {
-  const section = song?.sections[index] ?? null;
+function PresentationView({
+  song,
+  index,
+  onIndex,
+  onBack,
+  onLibrary,
+}: {
+  song: Song | null;
+  index: number;
+  onIndex: (value: number) => void;
+  onBack: () => void;
+  onLibrary: () => void;
+}) {
+  const slides = useMemo(() => buildSlides(song), [song]);
+  const current = clampSlideIndex(index, slides.length);
+  const slide = slides[current] ?? null;
+  const stage = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const slideTitle = (item: Slide) => `${sectionName(item.section)}${item.parts > 1 ? ` (parte ${item.part} de ${item.parts})` : ""}`;
+  const slideLabel = slide ? `Slide ${current + 1} de ${slides.length}: ${slideTitle(slide)}` : "";
+
+  useEffect(() => {
+    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']") || document.querySelector("dialog[open]")) return;
+      const next = slideIndexForKey(event.key, current, slides.length);
+      if (next === null) return;
+      event.preventDefault();
+      if (next !== current) onIndex(next);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [current, slides.length, onIndex]);
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await stage.current?.requestFullscreen();
+  }
+
+  const atStart = current === 0;
+  const atEnd = current >= slides.length - 1;
 
   return (
     <section>
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-soft">Apresentação</p>
           <h1 className="mt-2 text-3xl font-black">Modo 16:9</h1>
+          {song ? <p className="mt-1 break-words text-sm text-muted">{song.title}{song.artist ? ` · ${song.artist}` : ""}</p> : null}
         </div>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onBack}>Player</button>
+        <div className="flex flex-wrap gap-2">
+          {song ? (
+            <button type="button" className={touchButton} onClick={toggleFullscreen} aria-label={isFullscreen ? "Sair da tela cheia" : "Entrar em tela cheia"}>
+              {isFullscreen ? <Minimize size={15} aria-hidden /> : <Maximize size={15} aria-hidden />}
+              {isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            </button>
+          ) : null}
+          <button type="button" className={touchButton} onClick={onBack}><ArrowLeft size={15} aria-hidden /> Player</button>
+        </div>
       </div>
 
-      <div className="mt-6 aspect-video rounded-3xl border border-white/10 bg-black p-[4%]">
-        {song && section ? (
-          <div className="flex h-full flex-col justify-center">
-            <p className="text-[1.5vw] uppercase tracking-[0.18em] text-brand-soft">{song.title} · {sectionName(section)}</p>
-            <div className="mt-[3vw] space-y-[2vw]">
-              {section.lines.slice(0, 4).map((item) => <p key={item.id} className="text-[3.3vw] font-semibold leading-tight">{item.text}</p>)}
+      {song && slide ? (
+        <div ref={stage} className="mt-6 bg-background">
+          <p aria-live="polite" aria-atomic="true" className="sr-only" data-testid="slide-announcer">{slideLabel}</p>
+          <div
+            role="group"
+            aria-roledescription="slide"
+            aria-label={slideLabel}
+            className="aspect-video overflow-hidden rounded-3xl border border-white/10 bg-black"
+            style={{ containerType: "inline-size" }}
+          >
+            <div className="flex h-full flex-col justify-center overflow-hidden p-[4cqw]">
+              <p className="uppercase tracking-[0.18em] text-brand-soft" style={{ fontSize: "clamp(0.65rem, 1.5cqw, 1.1rem)" }}>
+                {song.title} · {slideTitle(slide)}
+              </p>
+              <div className="mt-[2.5cqw] space-y-[1.6cqw]">
+                {slide.lines.length === 0 ? (
+                  <p className="text-muted" style={{ fontSize: "clamp(0.9rem, 2.4cqw, 2rem)" }}>Seção sem linhas.</p>
+                ) : (
+                  slide.lines.map((item) => (
+                    <p key={item.id} className="break-words font-semibold leading-tight" style={{ fontSize: "clamp(0.95rem, 3.3cqw, 3rem)" }}>
+                      {item.text}
+                    </p>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="grid h-full place-items-center text-muted">Abra uma música primeiro.</div>
-        )}
-      </div>
 
-      {song ? (
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-surface p-3">
-          <button type="button" className="rounded-xl p-2" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0}><ArrowLeft size={17} /></button>
-          <span className="text-xs text-muted">{index + 1} / {song.sections.length}</span>
-          <button type="button" className="rounded-xl p-2" onClick={() => onIndex(Math.min(song.sections.length - 1, index + 1))} disabled={index === song.sections.length - 1}><ArrowRight size={17} /></button>
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-surface p-2">
+            <button
+              type="button"
+              className={`${touchButton} whitespace-nowrap aria-disabled:opacity-40`}
+              aria-disabled={atStart}
+              aria-keyshortcuts="ArrowLeft"
+              onClick={() => !atStart && onIndex(current - 1)}
+            >
+              <ArrowLeft size={16} aria-hidden /> Slide anterior
+            </button>
+            <span className="shrink-0 whitespace-nowrap text-sm text-muted" aria-hidden>{current + 1} / {slides.length}</span>
+            <button
+              type="button"
+              className={`${touchButton} whitespace-nowrap aria-disabled:opacity-40`}
+              aria-disabled={atEnd}
+              aria-keyshortcuts="ArrowRight"
+              onClick={() => !atEnd && onIndex(current + 1)}
+            >
+              Próximo slide <ArrowRight size={16} aria-hidden />
+            </button>
+          </div>
         </div>
+      ) : (
+        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-white/15 p-10 text-center">
+          <Presentation size={30} className="text-muted" aria-hidden />
+          <p className="font-semibold">Abra uma música primeiro.</p>
+          <p className="max-w-sm text-sm text-muted">Escolha uma música na biblioteca e use “Apresentar” para exibir a letra em slides.</p>
+          <button type="button" className={touchButton} onClick={onLibrary}>Ir para a biblioteca</button>
+        </div>
+      )}
+
+      {song && slides.length > 0 ? (
+        <>
+          <nav aria-label="Slides" className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-surface p-2">
+            <ol className="flex min-w-max gap-2">
+              {slides.map((item, position) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    aria-current={position === current ? "step" : undefined}
+                    className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground sm:min-h-10 ${position === current ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`}
+                    onClick={() => onIndex(position)}
+                  >
+                    {position + 1}. {sectionName(item.section)}{item.parts > 1 ? ` (${item.part}/${item.parts})` : ""}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <p className="mt-3 text-xs text-muted">Atalhos: ← e → mudam de slide; Home e End vão ao primeiro e ao último. No celular, use a tela cheia na horizontal para ler melhor.</p>
+        </>
       ) : null}
     </section>
   );

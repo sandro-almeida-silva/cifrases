@@ -102,3 +102,10 @@ Padrões adotados em `playlists-view.tsx`, `web-search-panel.tsx` e `song-import
 - Ao salvar com erro, o editor mostra um `role="alert"` com a contagem e foca o primeiro campo com `aria-invalid="true"`. Campos de seção e linha ligam o erro com `aria-describedby`.
 - Adicionar, mover e remover são anunciados em `data-testid="editor-announcer"` e mantêm o foco (nova seção → nome; nova linha → letra; mover → controle da própria seção, ou o oposto no limite; remover linha → "Linha"; remover seção → "Seção").
 - Salvar e Cancelar ficam numa barra fixa no rodapé. O `.ui-select`, o `inputClass` e os botões têm pelo menos 44px no celular.
+
+## Apresentação (#81)
+
+- `buildSlides` (`src/domain/songs/presentation.ts`) transforma cada seção em um ou mais slides de até 4 linhas, em partes equilibradas (6 linhas → 3 + 3), sem descartar nada. `slideIndexForKey` mapeia ← → PageUp PageDown Home End; ambos são testados sem navegador.
+- O slide é um `role="group"` com `aria-roledescription="slide"` e nome "Slide N de M: Seção (parte X de Y)"; a mudança é anunciada em `data-testid="slide-announcer"`.
+- "Slide anterior" e "Próximo slide" usam `aria-disabled` nos limites para não perder o foco. No Playwright, use `click({ force: true })` para exercitar o clique no limite.
+- O texto do slide escala com `cqw` (container query) e tem tamanho mínimo; há botão de tela cheia e a lista "Slides" (`aria-current="step"`) para ir direto a um slide.
