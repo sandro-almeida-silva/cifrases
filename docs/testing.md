@@ -88,3 +88,10 @@ Padrões adotados em `playlists-view.tsx`, `web-search-panel.tsx` e `song-import
 - **Foco**: depois de mover uma música ou bloco o foco volta ao controle usado (ou ao botão oposto no limite da lista); depois de importar da internet o foco vai para o cabeçalho "Revise e salve".
 - **Alvos de toque**: botões e seletores têm pelo menos 44px no mobile (`min-h-11`/`size-11`) e 36–40px no desktop.
 - **Movimento**: `prefers-reduced-motion` desliga animações em `globals.css`.
+
+## Biblioteca, música e player (#28)
+
+- Ações dos cartões da biblioteca têm nome por música (`Editar <título>`, `Excluir <título>`, `Tocar <título>`, `Favoritar <título>`) e o favorito informa `aria-pressed`. Os testes E2E que abrem uma música usam esses nomes.
+- Confirmações (excluir música, descartar edição, descartar cifra colada) usam o `ConfirmDialog` de `src/components/ui/dialog.tsx`, aberto por `confirmThen` em `page.tsx`. Nos testes, clique no botão do diálogo (`getByRole("dialog")`), não use `page.once("dialog")`.
+- O player agrupa os ajustes em Tom, Texto e Exibição (`role="group"`), mostra o tom atual em um `<output>` e permite ocultar o painel (`aria-expanded`).
+- Há um teste de área de toque (≥44px) que só roda no projeto `mobile-chrome`.

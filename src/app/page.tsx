@@ -32,6 +32,7 @@ import { Logo } from "@/components/brand/logo";
 import { PlaylistsView } from "@/components/playlists/playlists-view";
 import { SongImportView, type ImportFields, type ImportValues } from "@/components/import/song-import-view";
 import { SongSections, sectionName } from "@/components/song/song-sections";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import {
   cloneSong,
@@ -83,6 +84,24 @@ type DraftErrors = {
   sections?: string;
   [key: string]: string | undefined;
 };
+
+type ConfirmRequest = { title: string; description?: string; confirmLabel: string };
+
+const DISCARD_PASTE: ConfirmRequest = {
+  title: "Descartar a cifra colada?",
+  description: "O texto colado será perdido.",
+  confirmLabel: "Descartar",
+};
+const DISCARD_EDIT: ConfirmRequest = {
+  title: "Descartar a edição?",
+  description: "Existem alterações não salvas. Elas serão perdidas.",
+  confirmLabel: "Descartar edição",
+};
+
+const touchButton =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5 sm:min-h-10";
+const touchIcon =
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-white/10 sm:size-9";
 
 const sectionTypes: Array<{ value: SongSectionType; label: string }> = [
   { value: "intro", label: "Introdução" },
@@ -171,6 +190,7 @@ export default function HomePage() {
   const [importMessage, setImportMessage] = useState("");
   const [batchPlan, setBatchPlan] = useState<{ playlistId: string; entries: PlanEntry[] } | null>(null);
   const [importTarget, setImportTarget] = useState<number | null>(null);
+  const [confirmState, setConfirmState] = useState<(ConfirmRequest & { onConfirm: () => void }) | null>(null);
   const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
   const [pasteFields, setPasteFields] = useState<ImportFields>({ text: "" });
   const [draftOriginalUrl, setDraftOriginalUrl] = useState<string | null>(null);
@@ -407,11 +427,18 @@ export default function HomePage() {
     setView("import");
   }
 
+  function confirmThen(request: ConfirmRequest, action: () => void) {
+    setConfirmState({ ...request, onConfirm: action });
+  }
+
   function discardPasteImport() {
-    if (pasteFields.text.trim() && !window.confirm("Descartar a cifra colada?")) return;
-    setPasteFields({ text: "" });
-    setImportTarget(null);
-    setView(importTarget !== null ? "playlists" : "library");
+    const discard = () => {
+      setPasteFields({ text: "" });
+      setImportTarget(null);
+      setView(importTarget !== null ? "playlists" : "library");
+    };
+    if (pasteFields.text.trim()) confirmThen(DISCARD_PASTE, discard);
+    else discard();
   }
 
   function savePasteImport(parsed: ChordSheetDraft, values: ImportValues) {
@@ -528,29 +555,41 @@ export default function HomePage() {
   }, [draft, view]);
 
   function navigateFromEditor(nextView: View) {
-    if (view === "import" && pasteFields.text.trim() && !window.confirm("Descartar a cifra colada?")) return;
-    if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
-    setView(nextView);
-    setMobileMenu(false);
+    const go = () => {
+      setView(nextView);
+      setMobileMenu(false);
+    };
+    if (view === "import" && pasteFields.text.trim()) confirmThen(DISCARD_PASTE, go);
+    else if (view === "editor" && draftDirty) confirmThen(DISCARD_EDIT, go);
+    else go();
   }
 
   function deleteSong(id: string) {
     const item = songs.find((songItem) => songItem.id === id);
-    if (!item || !window.confirm(`Excluir "${item.title}"?`)) return;
-    if (item.media?.original?.id) {
-      void deleteOriginalImport(item.media.original.id).catch(() => undefined);
-    }
-    setSongs((state) => state.filter((songItem) => songItem.id !== id));
-    setLibrary((state) => ({
-      ...state,
-      favorites: state.favorites.filter((itemId) => itemId !== id),
-      recent: state.recent.filter((itemId) => itemId !== id),
-      playlists: state.playlists.map((playlist) =>
-        normalizePlaylist({ ...playlist, songIds: playlist.songIds.filter((itemId) => itemId !== id) }),
-      ),
-    }));
-    setSelectedId(null);
-    setView("library");
+    if (!item) return;
+    confirmThen(
+      {
+        title: `Excluir "${item.title}"?`,
+        description: "A música será removida da biblioteca e dos repertórios.",
+        confirmLabel: "Excluir música",
+      },
+      () => {
+        if (item.media?.original?.id) {
+          void deleteOriginalImport(item.media.original.id).catch(() => undefined);
+        }
+        setSongs((state) => state.filter((songItem) => songItem.id !== id));
+        setLibrary((state) => ({
+          ...state,
+          favorites: state.favorites.filter((itemId) => itemId !== id),
+          recent: state.recent.filter((itemId) => itemId !== id),
+          playlists: state.playlists.map((playlist) =>
+            normalizePlaylist({ ...playlist, songIds: playlist.songIds.filter((itemId) => itemId !== id) }),
+          ),
+        }));
+        setSelectedId(null);
+        setView("library");
+      },
+    );
   }
 
   function moveLine(sectionId: string, lineId: string, direction: -1 | 1) {
@@ -678,8 +717,7 @@ export default function HomePage() {
     }
   }
 
-  function cancelDraft() {
-    if (draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
+  function discardDraft() {
     if (draftMode === "create" && draft?.media?.original?.id) {
       void deleteOriginalImport(draft.media.original.id).catch(() => undefined);
     }
@@ -691,6 +729,11 @@ export default function HomePage() {
     setDraftErrors({});
     setOcrState({ status: "idle", progress: 0, message: "" });
     setView(song ? "player" : "library");
+  }
+
+  function cancelDraft() {
+    if (draftDirty) confirmThen(DISCARD_EDIT, discardDraft);
+    else discardDraft();
   }
 
   function attachAudio(file: File) {
@@ -1048,7 +1091,7 @@ export default function HomePage() {
         >
           <div className="relative flex items-center justify-between">
             <Logo compact={desktopSidebarCollapsed} />
-            <button type="button" className="lg:hidden rounded-xl p-2 text-muted hover:bg-white/5" onClick={() => setMobileMenu(false)} aria-label="Fechar menu">
+            <button type="button" className="lg:hidden inline-flex size-11 items-center justify-center rounded-xl text-muted hover:bg-white/5" onClick={() => setMobileMenu(false)} aria-label="Fechar menu">
               <X size={18} />
             </button>
             <button
@@ -1085,8 +1128,9 @@ export default function HomePage() {
               active={view === "editor"}
               collapsed={desktopSidebarCollapsed}
               onClick={() => {
-                if (view === "editor" && draftDirty && !window.confirm("Existem alterações não salvas. Deseja descartar a edição?")) return;
-                startEdit(song ?? songs[0] ?? emptySong());
+                const edit = () => startEdit(song ?? songs[0] ?? emptySong());
+                if (view === "editor" && draftDirty) confirmThen(DISCARD_EDIT, edit);
+                else edit();
               }}
             />
             <NavButton icon={<Presentation size={17} />} label="Apresentação" active={view === "presentation"} collapsed={desktopSidebarCollapsed} onClick={() => navigateFromEditor("presentation")} />
@@ -1101,7 +1145,7 @@ export default function HomePage() {
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-background/90 backdrop-blur-xl">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
-              <button type="button" className="rounded-xl border border-white/10 p-2 lg:hidden" onClick={() => setMobileMenu(true)} aria-label="Abrir menu">
+              <button type="button" className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/10 lg:hidden" onClick={() => setMobileMenu(true)} aria-label="Abrir menu">
                 <Menu size={18} />
               </button>
               <div className="flex-1">
@@ -1123,6 +1167,18 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+          <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ""}
+        {...(confirmState?.description ? { description: confirmState.description } : {})}
+        confirmLabel={confirmState?.confirmLabel ?? "Confirmar"}
+        onClose={() => setConfirmState(null)}
+        onConfirm={() => {
+          const action = confirmState?.onConfirm;
+          setConfirmState(null);
+          action?.();
+        }}
+      />
     </main>
   );
 }
@@ -1147,7 +1203,7 @@ function NavButton({
   return (
     <button
       type="button"
-      className={`group relative flex w-full items-center rounded-xl py-2.5 text-sm transition ${
+      className={`group relative flex min-h-11 w-full items-center rounded-xl py-2.5 text-sm transition ${
         collapsed ? "justify-center lg:px-0" : "gap-3 px-3"
       } ${active ? "bg-brand/12 text-brand-soft" : "text-muted hover:bg-white/5 hover:text-foreground"}`}
       onClick={onClick}
@@ -1212,12 +1268,12 @@ function LibraryView({
           <h1 className="mt-2 text-3xl font-black tracking-tight">Suas músicas</h1>
           <p className="mt-2 text-sm text-muted">Cadastre, encontre e toque suas músicas.</p>
         </div>
-        <div className="flex gap-2">
-          <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onNew}>Nova</button>
-          <button type="button" className="rounded-xl border border-control-border px-3 py-2 text-sm text-foreground hover:bg-control-background-hover" onClick={onPasteImport}>Colar cifra</button>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={touchButton} onClick={onNew}>Nova</button>
+          <button type="button" className={touchButton} onClick={onPasteImport}>Colar cifra</button>
+          <label className={`${touchButton} cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-brand-soft`}>
             <Upload size={15} /> Importar cifra
-            <input className="hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => {
+            <input className="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) onImportOriginal(file);
               event.currentTarget.value = "";
@@ -1225,9 +1281,9 @@ function LibraryView({
           </label>
         </div>
       </div>
-      {importMessage ? <p className="mt-3 text-xs text-muted" role="status">{importMessage}</p> : null}
+      {importMessage ? <p className="mt-3 text-sm text-muted" role="status">{importMessage}</p> : null}
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Select
           value={category}
           options={[
@@ -1236,7 +1292,7 @@ function LibraryView({
           ]}
           onChange={onCategory}
           ariaLabel="Filtrar por categoria"
-          className="min-w-48"
+          className="min-w-0 sm:min-w-48"
         />
         <Select
           value={sort}
@@ -1247,7 +1303,7 @@ function LibraryView({
           ]}
           onChange={onSort}
           ariaLabel="Ordenar músicas"
-          className="min-w-48"
+          className="min-w-0 sm:min-w-48"
         />
       </div>
 
@@ -1283,12 +1339,12 @@ function LibraryView({
                 </button>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <button type="button" className="text-left font-bold hover:text-brand-soft" onClick={() => onOpen(item.id)}>{item.title}</button>
+                    <div className="min-w-0">
+                      <button type="button" className="break-words text-left font-bold hover:text-brand-soft" onClick={() => onOpen(item.id)}>{item.title}</button>
                       <p className="mt-1 text-sm text-muted">{item.artist || "Artista não informado"}</p>
                     </div>
-                    <button type="button" className="rounded-lg p-2 text-muted hover:text-chord" onClick={() => onFavorite(item.id)} aria-label="Favoritar">
-                      <Heart size={16} fill={favorites.includes(item.id) ? "currentColor" : "none"} />
+                    <button type="button" className={`${touchIcon} -mr-1 -mt-1 hover:text-chord`} onClick={() => onFavorite(item.id)} aria-label={`Favoritar ${item.title}`} aria-pressed={favorites.includes(item.id)}>
+                      <Heart size={16} aria-hidden fill={favorites.includes(item.id) ? "currentColor" : "none"} />
                     </button>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
@@ -1300,9 +1356,9 @@ function LibraryView({
                 </div>
               </div>
               <div className="mt-4 flex justify-end gap-1 border-t border-white/8 pt-3">
-                <button type="button" className="rounded-lg p-2 text-muted hover:bg-white/5" onClick={() => onEdit(item)} aria-label="Editar"><Pencil size={15} /></button>
-                <button type="button" className="rounded-lg p-2 text-muted hover:bg-red-500/10 hover:text-red-200" onClick={() => onDelete(item.id)} aria-label="Excluir"><Trash2 size={15} /></button>
-                <button type="button" className="rounded-lg p-2 text-brand-soft hover:bg-brand/10" onClick={() => onOpen(item.id)} aria-label="Tocar"><ArrowRight size={16} /></button>
+                <button type="button" className={touchIcon} onClick={() => onEdit(item)} aria-label={`Editar ${item.title}`}><Pencil size={16} aria-hidden /></button>
+                <button type="button" className={`${touchIcon} hover:bg-red-500/10 hover:text-red-200`} onClick={() => onDelete(item.id)} aria-label={`Excluir ${item.title}`}><Trash2 size={16} aria-hidden /></button>
+                <button type="button" className={`${touchIcon} text-brand-soft hover:bg-brand/10`} onClick={() => onOpen(item.id)} aria-label={`Tocar ${item.title}`}><ArrowRight size={16} aria-hidden /></button>
               </div>
             </article>
           ))}
@@ -1829,7 +1885,7 @@ function DetailView({
 
   return (
     <section>
-      <button type="button" className="inline-flex items-center gap-2 text-sm text-muted" onClick={onBack}><ArrowLeft size={15} /> Biblioteca</button>
+      <button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm text-muted hover:text-foreground" onClick={onBack}><ArrowLeft size={15} aria-hidden /> Biblioteca</button>
 
       <div className="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-surface">
         <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[220px_1fr]">
@@ -1985,6 +2041,7 @@ function PlayerView({
   };
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(true);
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -2022,39 +2079,70 @@ function PlayerView({
       {playlistNav ? (
         <nav className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-surface px-3 py-2 text-sm" aria-label="Navegação do repertório">
           <span className="text-muted">Repertório {playlistNav.name}: {playlistNav.position} de {playlistNav.total}</span>
-          <button type="button" className="ml-auto rounded-xl border border-white/10 px-3 py-1.5 disabled:opacity-40" disabled={!playlistNav.onPrevious} onClick={playlistNav.onPrevious}>Música anterior</button>
-          <button type="button" className="rounded-xl bg-brand px-3 py-1.5 text-white disabled:opacity-40" disabled={!playlistNav.onNext} onClick={playlistNav.onNext}>Próxima música</button>
+          <button type="button" className={`ml-auto ${touchButton} disabled:opacity-40`} disabled={!playlistNav.onPrevious} onClick={playlistNav.onPrevious}>Música anterior</button>
+          <button type="button" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-3 py-2 text-sm text-white disabled:opacity-40 sm:min-h-10" disabled={!playlistNav.onNext} onClick={playlistNav.onNext}>Próxima música</button>
         </nav>
       ) : null}
       <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl font-black tracking-tight">{song.title}</h1>
+            <h1 className="break-words text-3xl font-black tracking-tight">{song.title}</h1>
             {song.key ? <span className="rounded-full bg-chord/10 px-3 py-1 text-sm text-chord">{transposeKey(song.key, transpose)}</span> : null}
           </div>
           <p className="mt-2 text-sm text-muted">{song.artist || "Artista não informado"}</p>
         </div>
-        <div className="flex gap-2">
-          <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onFavorite} aria-label="Favoritar"><Heart size={16} fill={favorite ? "currentColor" : "none"} /></button>
-          <button type="button" className="rounded-xl border border-white/10 p-2" onClick={onEdit} aria-label="Editar"><Pencil size={16} /></button>
-          <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ autoScroll: !preferences.autoScroll })}>Auto-scroll {preferences.autoScroll ? "on" : "off"}</button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={`${touchButton} size-11 !p-0 sm:size-10`} onClick={onFavorite} aria-label="Favoritar" aria-pressed={favorite}><Heart size={16} aria-hidden fill={favorite ? "currentColor" : "none"} /></button>
+          <button type="button" className={`${touchButton} size-11 !p-0 sm:size-10`} onClick={onEdit} aria-label="Editar"><Pencil size={16} aria-hidden /></button>
+          <button type="button" className={touchButton} onClick={() => onPreferences({ autoScroll: !preferences.autoScroll })}>Auto-scroll {preferences.autoScroll ? "on" : "off"}</button>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-surface p-3">
-        <button type="button" className="rounded-xl bg-brand px-3 py-2 text-sm" onClick={() => onTranspose(transpose + 1)}>+ ½</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onTranspose(0)}>Original</button>
-        <button type="button" className="rounded-xl bg-brand px-3 py-2 text-sm" onClick={() => onTranspose(transpose - 1)}>− ½</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ fontScale: Math.max(0.8, preferences.fontScale - 0.1) })}>A−</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ fontScale: Math.min(1.6, preferences.fontScale + 0.1) })}>A+</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ lineSpacing: Math.max(1.2, preferences.lineSpacing - 0.15) })}>Espaço −</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ lineSpacing: Math.min(2.4, preferences.lineSpacing + 0.15) })}>Espaço +</button>
-        <button type="button" className={`rounded-xl border px-3 py-2 text-sm ${preferences.highContrast ? "border-brand bg-brand/10" : "border-white/10"}`} onClick={() => onPreferences({ highContrast: !preferences.highContrast })} aria-pressed={preferences.highContrast}>Alto contraste</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={() => onPreferences({ maxWidth: preferences.maxWidth === "narrow" ? "comfortable" : preferences.maxWidth === "comfortable" ? "wide" : "narrow" })}>Largura</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={toggleFullscreen} aria-label={isFullscreen ? "Sair da tela cheia" : "Entrar em tela cheia"}>{isFullscreen ? "Sair tela cheia" : "Tela cheia"}</button>
-        <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-sm" onClick={onResetPreferences}>Restaurar padrão</button>
-        <span className="ml-auto text-xs text-muted">{Math.floor(currentSecond / 60).toString().padStart(2, "0")}:{Math.floor(currentSecond % 60).toString().padStart(2, "0")}</span>
-      </div>
+      <section aria-label="Ajustes de leitura" className="mt-5 rounded-2xl border border-white/10 bg-surface p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="whitespace-nowrap text-sm font-semibold">Ajustes de leitura</h2>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs text-muted">{Math.floor(currentSecond / 60).toString().padStart(2, "0")}:{Math.floor(currentSecond % 60).toString().padStart(2, "0")}</span>
+            <button type="button" className={`${touchButton} whitespace-nowrap`} aria-expanded={controlsOpen} aria-controls="player-controls" onClick={() => setControlsOpen((open) => !open)}>
+              {controlsOpen ? "Ocultar ajustes" : "Mostrar ajustes"}
+            </button>
+          </div>
+        </div>
+        <div id="player-controls" hidden={!controlsOpen} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div role="group" aria-labelledby="player-group-key">
+            <p id="player-group-key" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Tom</p>
+            <output className="mt-1 block text-sm text-brand-soft">
+              {song.key ? `${transposeKey(song.key, transpose)} · ` : ""}
+              {transpose === 0 ? "original" : `${transpose > 0 ? "+" : "−"}${Math.abs(transpose)} ${Math.abs(transpose) === 1 ? "meio-tom" : "meios-tons"}`}
+            </output>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className={touchButton} aria-label="− ½ tom, descer meio-tom" onClick={() => onTranspose(transpose - 1)}>− ½</button>
+              <button type="button" className={touchButton} onClick={() => onTranspose(0)}>Original</button>
+              <button type="button" className={touchButton} aria-label="+ ½ tom, subir meio-tom" onClick={() => onTranspose(transpose + 1)}>+ ½</button>
+            </div>
+          </div>
+          <div role="group" aria-labelledby="player-group-text">
+            <p id="player-group-text" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Texto</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className={touchButton} aria-label="A−, diminuir texto" onClick={() => onPreferences({ fontScale: Math.max(0.8, preferences.fontScale - 0.1) })}>A−</button>
+              <button type="button" className={touchButton} aria-label="A+, aumentar texto" onClick={() => onPreferences({ fontScale: Math.min(1.6, preferences.fontScale + 0.1) })}>A+</button>
+              <button type="button" className={touchButton} onClick={() => onPreferences({ lineSpacing: Math.max(1.2, preferences.lineSpacing - 0.15) })}>Espaço −</button>
+              <button type="button" className={touchButton} onClick={() => onPreferences({ lineSpacing: Math.min(2.4, preferences.lineSpacing + 0.15) })}>Espaço +</button>
+            </div>
+          </div>
+          <div role="group" aria-labelledby="player-group-view" className="sm:col-span-2">
+            <p id="player-group-view" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Exibição</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className={`${touchButton} ${preferences.highContrast ? "border-brand bg-brand/10" : ""}`} onClick={() => onPreferences({ highContrast: !preferences.highContrast })} aria-pressed={preferences.highContrast}>Alto contraste</button>
+              <button type="button" className={touchButton} onClick={() => onPreferences({ maxWidth: preferences.maxWidth === "narrow" ? "comfortable" : preferences.maxWidth === "comfortable" ? "wide" : "narrow" })}>
+                Largura <span className="text-muted">· {{ narrow: "estreita", comfortable: "média", wide: "larga" }[preferences.maxWidth]}</span>
+              </button>
+              <button type="button" className={touchButton} onClick={toggleFullscreen} aria-label={isFullscreen ? "Sair da tela cheia" : "Entrar em tela cheia"}>{isFullscreen ? "Sair tela cheia" : "Tela cheia"}</button>
+              <button type="button" className={touchButton} onClick={onResetPreferences}>Restaurar padrão</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {song.media?.audioUrl ? (
         <div className="mt-3 rounded-2xl border border-white/10 bg-surface p-3 sm:p-4">
@@ -2076,13 +2164,13 @@ function PlayerView({
             </button>
             <span className="min-w-24 text-xs font-mono text-muted">{formatTime(currentSecond)} / {formatTime(audioDuration)}</span>
             <input className="min-w-40 flex-1" type="range" min="0" max={Math.max(audioDuration, 0)} step="0.1" value={Math.min(currentSecond, audioDuration || 0)} onChange={(event) => onSeek(Number(event.target.value))} aria-label="Progresso do áudio" disabled={!audioDuration} />
-            <button type="button" className="rounded-xl border border-white/10 p-2" onClick={() => onVolume(audioVolume > 0 ? 0 : 1)} aria-label={audioVolume > 0 ? "Silenciar áudio" : "Ativar som"}>
+            <button type="button" className={`${touchButton} size-11 !p-0 sm:size-10`} onClick={() => onVolume(audioVolume > 0 ? 0 : 1)} aria-label={audioVolume > 0 ? "Silenciar áudio" : "Ativar som"}>
               {audioVolume > 0 ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
-            <select className="rounded-xl border border-white/10 bg-transparent px-2 py-2 text-xs" value={audioPlaybackRate} onChange={(event) => onPlaybackRate(Number(event.target.value))} aria-label="Velocidade de reprodução">
+            <select className="min-h-11 rounded-xl border border-white/15 bg-transparent px-2 py-2 text-sm sm:min-h-10" value={audioPlaybackRate} onChange={(event) => onPlaybackRate(Number(event.target.value))} aria-label="Velocidade de reprodução">
               {[0.75, 1, 1.25, 1.5, 2].map((rate) => <option key={rate} value={rate}>{rate}x</option>)}
             </select>
-            <button type="button" className="rounded-xl border border-white/10 px-3 py-2 text-xs" onClick={onResetAudioPosition}>Recomeçar</button>
+            <button type="button" className={touchButton} onClick={onResetAudioPosition}>Recomeçar</button>
           </div>
           {audioError ? <p role="alert" className="mt-3 text-xs text-red-300">Não foi possível reproduzir este áudio. Verifique o arquivo e tente novamente.</p> : null}
         </div>
@@ -2097,7 +2185,7 @@ function PlayerView({
         <span className="text-muted">Rolagem automática</span>
         <button
           type="button"
-          className="rounded-xl border border-white/10 px-3 py-1.5 font-semibold"
+          className={`${touchButton} font-semibold`}
           aria-pressed={preferences.autoScroll && !autoScrollPaused}
           onClick={onToggleAutoScrollPaused}
           disabled={!preferences.autoScroll}
@@ -2113,7 +2201,7 @@ function PlayerView({
               key={section.id}
               type="button"
               aria-current={activeSectionId === section.id ? "location" : undefined}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground ${activeSectionId === section.id ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`}
+              className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-xs font-semibold transition hover:border-brand/30 hover:text-foreground ${activeSectionId === section.id ? "border-brand bg-brand/10 text-foreground" : "border-white/10 text-muted"}`}
               onClick={() => document.getElementById(`player-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
               {index + 1}. {sectionName(section)}

@@ -36,8 +36,8 @@ test.describe("Importação de cifra colada", () => {
 
   test("descartar não salva nada", async ({ page }) => {
     await page.getByLabel("Texto da cifra").fill(cifra);
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Descartar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Descartar" }).click();
 
     await expect(page.getByRole("heading", { name: "Suas músicas" })).toBeVisible();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("cifrases:songs:v1") ?? "[]"));

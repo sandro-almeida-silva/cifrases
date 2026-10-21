@@ -152,8 +152,8 @@ test.describe("Cifrases", () => {
     await expect(page.getByText("Primeira Canção (cópia)")).toBeVisible();
 
     await page.getByRole("button", { name: "Abrir Primeira Canção (cópia)" }).click();
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Excluir" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Excluir música" }).click();
     await expect(page.getByRole("heading", { name: "Primeira Canção (cópia)" })).not.toBeVisible();
   });
 
@@ -263,8 +263,8 @@ test.describe("Cifrases", () => {
     await page.getByRole("button", { name: "Abrir Primeira Canção" }).click();
     await page.getByRole("button", { name: "Editar" }).click();
     await page.getByText("Título", { exact: true }).locator("..").getByRole("textbox").fill("Alteração descartada");
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Cancelar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Descartar edição" }).click();
 
     await expect(page.getByRole("heading", { name: "Primeira Canção" })).toBeVisible();
     await expect(page.getByText("Alteração descartada")).not.toBeVisible();
