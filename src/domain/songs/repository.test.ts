@@ -58,4 +58,35 @@ describe("uniqueSlug", () => {
   it("falls back to a generic name when the title has no letters", () => {
     expect(uniqueSlug("???", [""])).toBe("musica-2");
   });
+
+  it("loads old playlists without blocks unchanged", () => {
+    const state = parseLibraryState(JSON.stringify({ playlists: [{ id: "p1", name: "Culto", songIds: ["a", "b"] }] }));
+    expect(state.playlists).toEqual([{ id: "p1", name: "Culto", songIds: ["a", "b"] }]);
+  });
+
+  it("loads playlist blocks, dropping invalid ones and normalizing the order", () => {
+    const state = parseLibraryState(
+      JSON.stringify({
+        playlists: [
+          {
+            id: "p1",
+            name: "Culto",
+            songIds: ["a", "b", "c"],
+            blocks: [{ id: "b1", name: "Louvor" }, { id: 7 }, null],
+            blockBySong: { a: "b1", b: "gone", c: 3 },
+          },
+          { id: "p2", name: 5, songIds: [] },
+        ],
+      }),
+    );
+    expect(state.playlists).toEqual([
+      {
+        id: "p1",
+        name: "Culto",
+        songIds: ["b", "c", "a"],
+        blocks: [{ id: "b1", name: "Louvor" }],
+        blockBySong: { a: "b1" },
+      },
+    ]);
+  });
 });

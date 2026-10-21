@@ -123,6 +123,7 @@ A lista deve evitar cores duplicadas entre labels canônicas.
 | #71 | biblioteca | concluída | Biblioteca: importar repertório em lote a partir de lista de músicas |
 | #73 | operacao | aberta | Operação: corrigir falha do workflow Sync Issue Labels |
 | #77 | importacao | aberta | Importação: buscar cifra na internet por termo e importar com feedback de progresso |
+| #78 | biblioteca | aberta | Biblioteca: blocos nomeados dentro de um repertório |
 
 ## Regras de organização
 

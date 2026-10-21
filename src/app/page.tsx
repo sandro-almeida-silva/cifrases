@@ -56,11 +56,17 @@ import {
 import { type PlanEntry, buildPlan, parseSongList, planSongIds, resolveEntry } from "@/domain/songs/playlist-import";
 import { type ChordSheetDraft, songFromChordSheet } from "@/domain/songs/chord-sheet";
 import {
+  addBlockToPlaylist,
   addSongToPlaylist,
+  assignSongToBlock,
   createPlaylist,
   deletePlaylist,
+  moveBlockInPlaylist,
   moveSongInPlaylist,
+  normalizePlaylist,
+  removeBlockFromPlaylist,
   removeSongFromPlaylist,
+  renameBlockInPlaylist,
   renamePlaylist,
   type Playlist,
 } from "@/domain/songs/playlists";
@@ -424,7 +430,7 @@ export default function HomePage() {
       const entries = resolveEntry(batchPlan.entries, importTarget, next.id);
       setBatchPlan({ playlistId: batchPlan.playlistId, entries });
       changePlaylists((current) =>
-        current.map((item) => (item.id === batchPlan.playlistId ? { ...item, songIds: planSongIds(entries) } : item)),
+        current.map((item) => (item.id === batchPlan.playlistId ? normalizePlaylist({ ...item, songIds: planSongIds(entries) }) : item)),
       );
       setImportTarget(null);
       setView("playlists");
@@ -539,10 +545,9 @@ export default function HomePage() {
       ...state,
       favorites: state.favorites.filter((itemId) => itemId !== id),
       recent: state.recent.filter((itemId) => itemId !== id),
-      playlists: state.playlists.map((playlist) => ({
-        ...playlist,
-        songIds: playlist.songIds.filter((itemId) => itemId !== id),
-      })),
+      playlists: state.playlists.map((playlist) =>
+        normalizePlaylist({ ...playlist, songIds: playlist.songIds.filter((itemId) => itemId !== id) }),
+      ),
     }));
     setSelectedId(null);
     setView("library");
@@ -912,6 +917,15 @@ export default function HomePage() {
           onAddSong={(id, songId) => changePlaylists((items) => addSongToPlaylist(items, id, songId))}
           onRemoveSong={(id, songId) => changePlaylists((items) => removeSongFromPlaylist(items, id, songId))}
           onMoveSong={(id, songId, direction) => changePlaylists((items) => moveSongInPlaylist(items, id, songId, direction))}
+          onAddBlock={(id, name) => changePlaylists((items) => addBlockToPlaylist(items, id, name, createSongId()))}
+          onRenameBlock={(id, blockId, name) => changePlaylists((items) => renameBlockInPlaylist(items, id, blockId, name))}
+          onRemoveBlock={(id, blockId) => {
+            const block = library.playlists.find((item) => item.id === id)?.blocks?.find((item) => item.id === blockId);
+            if (!block || !window.confirm(`Excluir o bloco "${block.name}"? As músicas continuam no repertório, sem bloco.`)) return;
+            changePlaylists((items) => removeBlockFromPlaylist(items, id, blockId));
+          }}
+          onMoveBlock={(id, blockId, direction) => changePlaylists((items) => moveBlockInPlaylist(items, id, blockId, direction))}
+          onAssignSong={(id, songId, blockId) => changePlaylists((items) => assignSongToBlock(items, id, songId, blockId))}
           onPlay={(id) => playPlaylist(id)}
           plan={batchPlan}
           onImportList={importPlaylistList}
